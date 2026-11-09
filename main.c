@@ -20,6 +20,7 @@
 #include <tchar.h>
 #include <shlobj.h>
 #include <shlwapi.h>
+#include <tlhelp32.h>
 
 #pragma comment(lib, "shlwapi.lib")
 
@@ -40,6 +41,7 @@
 #include "Window.h"
 #include "Tool.h"
 #include "Viewer.h"
+#include "Search.h"
 #include "Container.h"
 #include "BinView.h"
 #include "ToolTip.h"
@@ -525,6 +527,18 @@ static BOOL menu_attach_begin(const HWND hWnd, const HWND active_wnd, const BOOL
 }
 
 /*
+ * menu_key_hook_pause - 検索入力へ実キーを渡すため、メニュー用キーフックを外す
+ */
+void menu_key_hook_pause(void)
+{
+	if (menu_key_hook != NULL) {
+		UnhookWindowsHookEx(menu_key_hook);
+		menu_key_hook = NULL;
+	}
+	menu_key_wnd = NULL;
+}
+
+/*
  * menu_attach_end - アタッチの解除
  */
 static void menu_attach_end(void)
@@ -974,6 +988,11 @@ static BOOL action_execute(const HWND hWnd, const int type, const int id, const 
 	case ACTION_VIEWER:
 		// ビューア表示
 		SendMessage(hWnd, WM_COMMAND, ID_MENUITEM_VIEWER, 0);
+		break;
+
+	case ACTION_SEARCH:
+		// 検索
+		search_show(hWnd, ((option.action_info + i)->paste != 0) ? TRUE : FALSE);
 		break;
 
 	case ACTION_OPTION:
@@ -1932,6 +1951,11 @@ static LRESULT CALLBACK main_message_proc(HWND hWnd, UINT msg, WPARAM wParam, LP
 			SendMessage(hWnd, WM_CLOSE, 0, 0);
 			break;
 
+		case ID_MENUITEM_SEARCH:
+			// 検索
+			search_show(hWnd, TRUE);
+			break;
+
 		case ID_MENUITEM_VIEWER:
 			// ビューア
 			if (hViewerWnd != NULL) {
@@ -2722,6 +2746,11 @@ static void commnad_line_func(const HWND hWnd)
 			}
 		}
 		switch (*p) {
+		case TEXT('s'): case TEXT('S'):
+			// 検索
+			SendMessage(hWnd, WM_COMMAND, ID_MENUITEM_SEARCH, 0);
+			break;
+
 		case TEXT('v'): case TEXT('V'):
 			// ビューア表示
 			vWnd = (HWND)SendMessage(hWnd, WM_VIEWER_GET_HWND, 0, 0);
@@ -2793,6 +2822,40 @@ static HWND init_instance(const HINSTANCE hInstance, const int CmdShow)
 	return hWnd;
 }
 
+#ifndef _DEBUG
+/*
+ * release_stuck_instance - ウィンドウを失ったまま残っている CLCL を終了する
+ */
+static void release_stuck_instance(void)
+{
+	HANDLE snap;
+	PROCESSENTRY32 pe;
+	DWORD self_id;
+
+	self_id = GetCurrentProcessId();
+	snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if (snap == INVALID_HANDLE_VALUE) {
+		return;
+	}
+	pe.dwSize = sizeof(PROCESSENTRY32);
+	if (Process32First(snap, &pe) != FALSE) {
+		do {
+			HANDLE proc;
+
+			if (pe.th32ProcessID == self_id || lstrcmpi(pe.szExeFile, TEXT("CLCL.exe")) != 0) {
+				continue;
+			}
+			proc = OpenProcess(PROCESS_TERMINATE, FALSE, pe.th32ProcessID);
+			if (proc != NULL) {
+				TerminateProcess(proc, 0);
+				CloseHandle(proc);
+			}
+		} while (Process32Next(snap, &pe) != FALSE);
+	}
+	CloseHandle(snap);
+}
+#endif
+
 /*
  * WinMain - メイン
  */
@@ -2838,6 +2901,13 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdL
 				break;
 			}
 		}
+		if (owned == FALSE && hMainWnd == NULL) {
+			// ミューテックスだけ残ってウィンドウがない場合は、終了しきれなかったプロセスを解放して起動する
+			release_stuck_instance();
+			if (WaitForSingleObject(hMutex, 3000) != WAIT_TIMEOUT) {
+				owned = TRUE;
+			}
+		}
 		if (owned == FALSE) {
 			// コマンドライン処理
 			commnad_line_func(hMainWnd);
@@ -2872,7 +2942,7 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdL
 	}
 
 	// ビューアの登録
-	if (viewer_regist(hInstance) == FALSE ||
+	if (viewer_regist(hInstance) == FALSE || search_regist(hInstance) == FALSE ||
 		container_regist(hInstance) == FALSE || binview_regist(hInstance) == FALSE) {
 		MessageBox(NULL, message_get_res(IDS_ERROR_WINDOW_INIT), ERROR_TITLE, MB_ICONERROR);
 		if (hMutex != NULL) {

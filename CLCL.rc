@@ -112,6 +112,8 @@ BEGIN
     END
     POPUP "編集(&E)"
     BEGIN
+        MENUITEM "検索(&S)...\tCtrl+F",             ID_MENUITEM_SEARCH
+        MENUITEM SEPARATOR
         MENUITEM "クリップボードに送る(&C)\tCtrl+C",      ID_MENUITEM_CLIPBOARD
         MENUITEM "クリップボードから貼り付け(&P)\tCtrl+V",   ID_MENUITEM_PASTE
         MENUITEM "登録アイテムに追加(&R)...\tCtrl+R",    ID_MENUITEM_REGIST_ADD
@@ -279,6 +281,7 @@ BEGIN
     "R",            ID_MENUITEM_REGIST_MOVE, VIRTKEY, SHIFT, CONTROL, NOINVERT
     "S",            ID_MENUITEM_DATA_SAVE,  VIRTKEY, CONTROL, NOINVERT
     "S",            ID_MENUITEM_SAVE,       VIRTKEY, SHIFT, CONTROL, NOINVERT
+    "F",            ID_MENUITEM_SEARCH,     VIRTKEY, CONTROL, NOINVERT
     VK_DOWN,        ID_MENUITEM_DOWN,       VIRTKEY, ALT, NOINVERT
     VK_ESCAPE,      ID_MENUITEM_CLOSE,      VIRTKEY, NOINVERT
     VK_TAB,         ID_ACCEL_CTRL_TAB,      VIRTKEY, CONTROL, NOINVERT
@@ -424,8 +427,8 @@ IDR_TOOLBAR48           BITMAP                  "res\\toolbar48.bmp"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,2,1,0
- PRODUCTVERSION 2,2,1,0
+ FILEVERSION 2,2,2,0
+ PRODUCTVERSION 2,2,2,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -441,12 +444,12 @@ BEGIN
         BLOCK "041104b0"
         BEGIN
             VALUE "FileDescription", "CLCL"
-            VALUE "FileVersion", "2.2.1.0"
+            VALUE "FileVersion", "2.2.2.0"
             VALUE "InternalName", "CLCL.exe"
             VALUE "LegalCopyright", "Copyright (C) 1996-2026 by Ohno Tomoaki. All rights reserved."
             VALUE "OriginalFilename", "CLCL.exe"
             VALUE "ProductName", "CLCL"
-            VALUE "ProductVersion", "2.2.1.0"
+            VALUE "ProductVersion", "2.2.2.0"
         END
     END
     BLOCK "VarFileInfo"
@@ -581,6 +584,28 @@ END
 STRINGTABLE
 BEGIN
     IDS_DIALOG_EXPORT       "エクスポートするフォルダを選択してください。"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_MENU_SEARCH         "検索(&S)..."
+    IDS_SEARCH_TITLE        "検索"
+    IDS_SEARCH_FIND         "検索(&F):"
+    IDS_SEARCH_PASTE_CHECK  "選択時に貼り付け(&P)"
+    IDS_SEARCH_COPY         "コピー(&C)"
+    IDS_SEARCH_PASTE        "貼り付け(&V)"
+    IDS_SEARCH_SHOW         "ビューアで表示(&L)"
+    IDS_SEARCH_CLOSE        "閉じる"
+    IDS_SEARCH_SOURCE_HISTORY "履歴"
+    IDS_SEARCH_SOURCE_REGIST "登録アイテム"
+    IDS_SEARCH_COUNT        "%d 件"
+    IDS_SEARCH_NONE         "一致する項目はありません"
+    IDS_SEARCH_COLUMN_DATA  "データ"
+    IDS_SEARCH_COLUMN_SOURCE "種類"
+    IDS_SEARCH_COLUMN_WINDOW "ウィンドウ"
+    IDS_SEARCH_COLUMN_DATE  "更新日時"
+    IDS_SEARCH_EMPTY_ITEM   "(空)"
+    IDS_SEARCH_CUE          "キーワードを入力"
 END
 
 #endif    // Japanese (Japan) resources
@@ -733,6 +758,8 @@ BEGIN
     END
     POPUP "编辑(&E)"
     BEGIN
+        MENUITEM "搜索(&F)...\tCtrl+F",             ID_MENUITEM_SEARCH
+        MENUITEM SEPARATOR
         MENUITEM "发送到剪贴板(&C)\tCtrl+C",          ID_MENUITEM_CLIPBOARD
         MENUITEM "从剪贴板粘贴(&P)\tCtrl+V",          ID_MENUITEM_PASTE
         MENUITEM "添加到模板(&T)...\tCtrl+R",        ID_MENUITEM_REGIST_ADD
@@ -995,6 +1022,28 @@ BEGIN
     IDS_DIALOG_EXPORT       "请选择要导出的目录。"
 END
 
+STRINGTABLE
+BEGIN
+    IDS_MENU_SEARCH         "搜索(&S)..."
+    IDS_SEARCH_TITLE        "搜索"
+    IDS_SEARCH_FIND         "查找(&F):"
+    IDS_SEARCH_PASTE_CHECK  "选中后粘贴(&P)"
+    IDS_SEARCH_COPY         "复制(&C)"
+    IDS_SEARCH_PASTE        "粘贴(&V)"
+    IDS_SEARCH_SHOW         "在查看器中显示(&L)"
+    IDS_SEARCH_CLOSE        "关闭"
+    IDS_SEARCH_SOURCE_HISTORY "历史"
+    IDS_SEARCH_SOURCE_REGIST "模板"
+    IDS_SEARCH_COUNT        "%d 项"
+    IDS_SEARCH_NONE         "没有匹配的项目"
+    IDS_SEARCH_COLUMN_DATA  "内容"
+    IDS_SEARCH_COLUMN_SOURCE "来源"
+    IDS_SEARCH_COLUMN_WINDOW "窗口"
+    IDS_SEARCH_COLUMN_DATE  "时间"
+    IDS_SEARCH_EMPTY_ITEM   "(空)"
+    IDS_SEARCH_CUE          "输入要查找的文字"
+END
+
 #endif    // Chinese (Simplified, China) resources
 /////////////////////////////////////////////////////////////////////////////
 
@@ -1145,6 +1194,8 @@ BEGIN
     END
     POPUP "Правка"
     BEGIN
+        MENUITEM "Пошук...\tCtrl+F",            ID_MENUITEM_SEARCH
+        MENUITEM SEPARATOR
         MENUITEM "Відправити в буфер обміну\tCtrl+C", ID_MENUITEM_CLIPBOARD
         MENUITEM "Вставити з буфера\tCtrl+V",   ID_MENUITEM_PASTE
         MENUITEM "Додати до шаблону...\tCtrl+R", ID_MENUITEM_REGIST_ADD
@@ -1407,6 +1458,28 @@ BEGIN
     IDS_DIALOG_EXPORT       "Виберіть папку для експорту."
 END
 
+STRINGTABLE
+BEGIN
+    IDS_MENU_SEARCH         "Пошук..."
+    IDS_SEARCH_TITLE        "Пошук"
+    IDS_SEARCH_FIND         "Пошук:"
+    IDS_SEARCH_PASTE_CHECK  "Вставити після вибору"
+    IDS_SEARCH_COPY         "Копіювати"
+    IDS_SEARCH_PASTE        "Вставити"
+    IDS_SEARCH_SHOW         "Показати в переглядачі"
+    IDS_SEARCH_CLOSE        "Закрити"
+    IDS_SEARCH_SOURCE_HISTORY "Історія"
+    IDS_SEARCH_SOURCE_REGIST "Шаблон"
+    IDS_SEARCH_COUNT        "%d"
+    IDS_SEARCH_NONE         "Нічого не знайдено"
+    IDS_SEARCH_COLUMN_DATA  "Дані"
+    IDS_SEARCH_COLUMN_SOURCE "Джерело"
+    IDS_SEARCH_COLUMN_WINDOW "Вікно"
+    IDS_SEARCH_COLUMN_DATE  "Час"
+    IDS_SEARCH_EMPTY_ITEM   "(порожньо)"
+    IDS_SEARCH_CUE          "Введіть текст"
+END
+
 #endif    // Ukrainian (Ukraine) resources
 
 
@@ -1556,6 +1629,8 @@ BEGIN
     END
     POPUP "&Edit"
     BEGIN
+        MENUITEM "&Search...\tCtrl+F",          ID_MENUITEM_SEARCH
+        MENUITEM SEPARATOR
         MENUITEM "Send to &Clipboard\tCtrl+C",  ID_MENUITEM_CLIPBOARD
         MENUITEM "&Paste from Clipboard\tCtrl+V", ID_MENUITEM_PASTE
         MENUITEM "Add to &Template...\tCtrl+R", ID_MENUITEM_REGIST_ADD
@@ -1797,6 +1872,28 @@ BEGIN
     IDS_DIALOG_EXPORT       "Please select the folder to export."
 END
 
+STRINGTABLE
+BEGIN
+    IDS_MENU_SEARCH         "&Search..."
+    IDS_SEARCH_TITLE        "Search"
+    IDS_SEARCH_FIND         "&Find:"
+    IDS_SEARCH_PASTE_CHECK  "&Paste when selected"
+    IDS_SEARCH_COPY         "&Copy"
+    IDS_SEARCH_PASTE        "&Paste"
+    IDS_SEARCH_SHOW         "Show in &Viewer"
+    IDS_SEARCH_CLOSE        "Close"
+    IDS_SEARCH_SOURCE_HISTORY "History"
+    IDS_SEARCH_SOURCE_REGIST "Template"
+    IDS_SEARCH_COUNT        "%d items"
+    IDS_SEARCH_NONE         "No matching items"
+    IDS_SEARCH_COLUMN_DATA  "Data"
+    IDS_SEARCH_COLUMN_SOURCE "Source"
+    IDS_SEARCH_COLUMN_WINDOW "Window"
+    IDS_SEARCH_COLUMN_DATE  "Date"
+    IDS_SEARCH_EMPTY_ITEM   "(empty)"
+    IDS_SEARCH_CUE          "Type to search"
+END
+
 #endif    // 英語 (米国) resources
 /////////////////////////////////////////////////////////////////////////////
 
@@ -1946,6 +2043,8 @@ BEGIN
     END
     POPUP "&Bearbeiten"
     BEGIN
+        MENUITEM "&Suchen...\tCtrl+F",          ID_MENUITEM_SEARCH
+        MENUITEM SEPARATOR
         MENUITEM "An Zwischenablage &senden\tCtrl+C", ID_MENUITEM_CLIPBOARD
         MENUITEM "&Aus Zwischenablage einfügen\tCtrl+V", ID_MENUITEM_PASTE
         MENUITEM "Zu &Vorlagen hinzufügen...\tCtrl+R", ID_MENUITEM_REGIST_ADD
@@ -2185,6 +2284,28 @@ END
 STRINGTABLE
 BEGIN
     IDS_DIALOG_EXPORT       "Bitte wählen Sie einen Ordner zum Exportieren."
+END
+
+STRINGTABLE
+BEGIN
+    IDS_MENU_SEARCH         "&Suchen..."
+    IDS_SEARCH_TITLE        "Suchen"
+    IDS_SEARCH_FIND         "&Suchen:"
+    IDS_SEARCH_PASTE_CHECK  "Beim Auswählen &einfügen"
+    IDS_SEARCH_COPY         "&Kopieren"
+    IDS_SEARCH_PASTE        "&Einfügen"
+    IDS_SEARCH_SHOW         "In Anzeige &zeigen"
+    IDS_SEARCH_CLOSE        "Schließen"
+    IDS_SEARCH_SOURCE_HISTORY "Verlauf"
+    IDS_SEARCH_SOURCE_REGIST "Vorlagen"
+    IDS_SEARCH_COUNT        "%d Einträge"
+    IDS_SEARCH_NONE         "Keine Treffer"
+    IDS_SEARCH_COLUMN_DATA  "Daten"
+    IDS_SEARCH_COLUMN_SOURCE "Quelle"
+    IDS_SEARCH_COLUMN_WINDOW "Fenster"
+    IDS_SEARCH_COLUMN_DATE  "Datum"
+    IDS_SEARCH_EMPTY_ITEM   "(leer)"
+    IDS_SEARCH_CUE          "Suchtext eingeben"
 END
 
 #endif    // German (Germany) resources

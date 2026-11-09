@@ -8,6 +8,7 @@
 #define IDS_MENU_VIEWER                 4
 #define IDS_MENU_OPTION                 5
 #define IDS_MENU_CLIPBOARD_WATCH        6
+#define IDS_MENU_SEARCH                 7
 #define IDS_TREEITEM_CLIPBOARD          10
 #define IDS_TREEITEM_HISTORY            11
 #define IDS_TREEITEM_REGIST             12
@@ -54,6 +55,23 @@
 #define IDS_DIALOG_MOVEPOS              302
 #define IDS_DIALOG_IMPORT               303
 #define IDS_DIALOG_EXPORT               304
+#define IDS_SEARCH_TITLE                410
+#define IDS_SEARCH_FIND                 411
+#define IDS_SEARCH_PASTE_CHECK          412
+#define IDS_SEARCH_COPY                 413
+#define IDS_SEARCH_PASTE                414
+#define IDS_SEARCH_SHOW                 415
+#define IDS_SEARCH_CLOSE                416
+#define IDS_SEARCH_SOURCE_HISTORY       417
+#define IDS_SEARCH_SOURCE_REGIST        418
+#define IDS_SEARCH_COUNT                419
+#define IDS_SEARCH_NONE                 420
+#define IDS_SEARCH_COLUMN_DATA          421
+#define IDS_SEARCH_COLUMN_SOURCE        422
+#define IDS_SEARCH_COLUMN_WINDOW        423
+#define IDS_SEARCH_COLUMN_DATE          424
+#define IDS_SEARCH_EMPTY_ITEM           425
+#define IDS_SEARCH_CUE                  426
 #define IDS_VIEWER_COPYNAME             400
 #define IDS_VIEWER_COPYNAME_NUM         401
 #define IDS_VIEWER_MENU_TOOL_NOTHING    402
@@ -137,6 +155,7 @@
 #define ID_MENUITEM_EXPORT              40051
 #define ID_MENUITEM_SET_HOTKEY          40053
 #define ID_MENUITEM_OPEN                40054
+#define ID_MENUITEM_SEARCH              40055
 #define ID_MENU_DGDP_MOVE               40063
 #define ID_MENU_DGDP_COPY               40064
 #define ID_MENUITEM_CLIPBOARD_TB        50000
@@ -152,7 +171,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        140
-#define _APS_NEXT_COMMAND_VALUE         40055
+#define _APS_NEXT_COMMAND_VALUE         40056
 #define _APS_NEXT_CONTROL_VALUE         1010
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

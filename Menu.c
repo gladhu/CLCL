@@ -49,6 +49,7 @@
 /* Global Variables */
 static MENU_ITEM_INFO *menu_item_info;
 static int menu_item_cnt;
+static BOOL menu_filter_enable;
 
 // ダークモードのメニュー背景ブラシ
 static HBRUSH menu_back_brush;
@@ -144,6 +145,7 @@ static void menu_item_free(MENU_ITEM_INFO *mii, int cnt)
  */
 void menu_free(void)
 {
+	menu_filter_enable = FALSE;
 	menu_item_free(menu_item_info, menu_item_cnt);
 	menu_item_info = NULL;
 	menu_item_cnt = 0;
@@ -336,6 +338,9 @@ int menu_show(const HWND hWnd, const HMENU hMenu, const POINT *mpos)
 	DWORD ret;
 
 	menu_get_show_point(mpos, &apos);
+	if (menu_filter_enable == TRUE) {
+		return menu_filter_show(hWnd, hMenu, &apos, menu_item_info, menu_item_cnt);
+	}
 	ret = TrackPopupMenu(hMenu,
 		TPM_TOPALIGN | TPM_LEFTBUTTON | TPM_RIGHTBUTTON | TPM_RETURNCMD,
 		apos.x, apos.y, 0, hWnd, NULL);
@@ -456,8 +461,27 @@ static HICON menu_read_icon(const TCHAR *file_name, const int index, const int i
 }
 
 /*
- * menu_create_font - メニュー用フォントの作成
+ * menu_font_create - メニュー用フォントの作成
  */
+HFONT menu_font_create(void)
+{
+	return menu_create_font();
+}
+
+/*
+ * menu_item_extent - 項目の幅と高さを取得
+ */
+int menu_item_extent(const MENU_ITEM_INFO *mii, int *width)
+{
+	if (mii == NULL) {
+		if (width != NULL) {
+			*width = 0;
+		}
+		return 0;
+	}
+	return menu_get_item_size(mii, width);
+}
+
 static HFONT menu_create_font(void)
 {
 	NONCLIENTMETRICS ncMetrics;
@@ -866,6 +890,7 @@ static MENU_ITEM_INFO *menu_create_info(MENU_INFO *menu_info, const int menu_cnt
 		case MENU_CONTENT_SEPARATOR:
 		case MENU_CONTENT_POPUP:
 		case MENU_CONTENT_VIEWER:
+		case MENU_CONTENT_SEARCH:
 		case MENU_CONTENT_OPTION:
 		case MENU_CONTENT_CLIPBOARD_WATCH:
 		case MENU_CONTENT_APP:
@@ -999,6 +1024,18 @@ static MENU_ITEM_INFO *menu_create_info(MENU_INFO *menu_info, const int menu_cnt
 			(mii + j)->item = (LPCTSTR)(mii + j);
 			(mii + j)->text = alloc_copy(((menu_info + i)->title == NULL || *(menu_info + i)->title == TEXT('\0')) ?
 				message_get_res(IDS_MENU_VIEWER) : (menu_info + i)->title);
+			(mii + j)->icon = menu_read_icon((menu_info + i)->icon_path, (menu_info + i)->icon_index, MENU_ICON_SIZE);
+			(mii + j)->free_icon = TRUE;
+			j++;
+			break;
+
+		case MENU_CONTENT_SEARCH:
+			// 検索
+			(mii + j)->id = ID_MENUITEM_SEARCH;
+			(mii + j)->flag = MF_OWNERDRAW;
+			(mii + j)->item = (LPCTSTR)(mii + j);
+			(mii + j)->text = alloc_copy(((menu_info + i)->title == NULL || *(menu_info + i)->title == TEXT('\0')) ?
+				message_get_res(IDS_MENU_SEARCH) : (menu_info + i)->title);
 			(mii + j)->icon = menu_read_icon((menu_info + i)->icon_path, (menu_info + i)->icon_index, MENU_ICON_SIZE);
 			(mii + j)->free_icon = TRUE;
 			j++;
@@ -1174,6 +1211,25 @@ static BOOL menu_set_item(const HDC hdc, const HMENU hMenu, MENU_ITEM_INFO *mii,
 }
 
 /*
+ * menu_info_has_history - 先頭階層に履歴があるか
+ */
+static BOOL menu_info_has_history(const MENU_INFO *menu_info, const int menu_cnt)
+{
+	int i;
+
+	if (menu_info == NULL) {
+		return FALSE;
+	}
+	for (i = 0; i < menu_cnt; i++) {
+		if ((menu_info + i)->content == MENU_CONTENT_HISTORY ||
+			(menu_info + i)->content == MENU_CONTENT_HISTORY_DESC) {
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+/*
  * menu_create - メニューの作成
  */
 HMENU menu_create(const HWND hWnd, MENU_INFO *menu_info, const int menu_cnt,
@@ -1183,6 +1239,8 @@ HMENU menu_create(const HWND hWnd, MENU_INFO *menu_info, const int menu_cnt,
 	HDC hdc;
 	HFONT hFont, hRetFont;
 	int id = 0;
+
+	menu_filter_enable = FALSE;
 
 	// 表示するモニタのDPIに合わせる
 	if (IsRectEmpty(&menu_monitor_rect) != FALSE) {
@@ -1230,6 +1288,7 @@ HMENU menu_create(const HWND hWnd, MENU_INFO *menu_info, const int menu_cnt,
 			SetMenuInfo(hMenu, &mi);
 		}
 	}
+	menu_filter_enable = menu_info_has_history(menu_info, menu_cnt);
 	return hMenu;
 }
 

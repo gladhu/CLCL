@@ -52,6 +52,7 @@ static int ini_limit_cnt(const int cnt);
 static FORMAT_NAME *ini_get_format_name(TCHAR *format_name, int *cnt);
 static BOOL ini_get_menu(const TCHAR *ini_path, const TCHAR *menu_path, MENU_INFO *mi, const int mcnt, const int level, TCHAR *err_str);
 static BOOL ini_read_option(TCHAR *err_str);
+static void ini_ensure_search_action(void);
 static BOOL ini_put_menu(const TCHAR *ini_path, const TCHAR *menu_path, MENU_INFO *mi, const int mcnt, const int level);
 void ini_set_language(const TCHAR* locale_name);
 
@@ -199,6 +200,49 @@ BOOL ini_get_option(TCHAR *err_str)
 }
 
 /*
+ * ini_ensure_search_action - 旧設定に検索のホットキーが無ければ追加する
+ */
+static void ini_ensure_search_action(void)
+{
+	ACTION_INFO *new_info;
+	void *old_info;
+	int i;
+
+	for (i = 0; i < option.action_cnt; i++) {
+		if ((option.action_info + i)->action == ACTION_SEARCH) {
+			return;
+		}
+		if ((option.action_info + i)->type == ACTION_TYPE_HOTKEY &&
+			((option.action_info + i)->modifiers & (MOD_ALT | MOD_CONTROL | MOD_SHIFT)) == MOD_ALT &&
+			(option.action_info + i)->virtkey == (UINT)'F') {
+			return;
+		}
+	}
+	new_info = (ACTION_INFO *)mem_calloc(sizeof(ACTION_INFO) * (option.action_cnt + 1));
+	if (new_info == NULL) {
+		return;
+	}
+	if (option.action_cnt > 0 && option.action_info != NULL) {
+		CopyMemory(new_info, option.action_info, sizeof(ACTION_INFO) * option.action_cnt);
+	}
+	i = option.action_cnt;
+	(new_info + i)->action = ACTION_SEARCH;
+	(new_info + i)->type = ACTION_TYPE_HOTKEY;
+	(new_info + i)->enable = 1;
+	(new_info + i)->caret = 0;
+	(new_info + i)->id = HKEY_ID + i;
+	(new_info + i)->modifiers = MOD_ALT;
+	(new_info + i)->virtkey = 'F';
+	(new_info + i)->paste = 1;
+	old_info = option.action_info;
+	option.action_info = new_info;
+	option.action_cnt++;
+	if (old_info != NULL) {
+		mem_free(&old_info);
+	}
+}
+
+/*
  * ini_read_option - INI ファイルからオプションを読み込む
  */
 static BOOL ini_read_option(TCHAR *err_str)
@@ -332,7 +376,7 @@ static BOOL ini_read_option(TCHAR *err_str)
 	option.action_cnt = ini_limit_cnt(profile_get_int(TEXT("action"), TEXT("cnt"), -1, ini_path));
 	if (option.action_cnt < 0) {
 		// Default
-		option.action_cnt = 4;
+		option.action_cnt = 5;
 		if ((option.action_info = mem_calloc(sizeof(ACTION_INFO) * option.action_cnt)) == NULL) {
 			message_get_error(GetLastError(), err_str);
 			return FALSE;
@@ -357,7 +401,7 @@ static BOOL ini_read_option(TCHAR *err_str)
 		(option.action_info + i)->virtkey = 0;
 		(option.action_info + i)->paste = 1;
 
-		(option.action_info + i)->menu_cnt = 8;
+		(option.action_info + i)->menu_cnt = 9;
 		(option.action_info + i)->menu_info = mem_calloc(sizeof(MENU_INFO) * (option.action_info + i)->menu_cnt);
 		if ((option.action_info + i)->menu_info == NULL) {
 			message_get_error(GetLastError(), err_str);
@@ -379,10 +423,11 @@ static BOOL ini_read_option(TCHAR *err_str)
 			(((option.action_info + i)->menu_info + 2)->mi + 0)->content = MENU_CONTENT_REGIST;
 			(((option.action_info + i)->menu_info + 2)->mi + 0)->path = alloc_copy(TEXT("\\"));
 		((option.action_info + i)->menu_info + 3)->content = MENU_CONTENT_SEPARATOR;
-		((option.action_info + i)->menu_info + 4)->content = MENU_CONTENT_VIEWER;
-		((option.action_info + i)->menu_info + 5)->content = MENU_CONTENT_OPTION;
-		((option.action_info + i)->menu_info + 6)->content = MENU_CONTENT_SEPARATOR;
-		((option.action_info + i)->menu_info + 7)->content = MENU_CONTENT_EXIT;
+		((option.action_info + i)->menu_info + 4)->content = MENU_CONTENT_SEARCH;
+		((option.action_info + i)->menu_info + 5)->content = MENU_CONTENT_VIEWER;
+		((option.action_info + i)->menu_info + 6)->content = MENU_CONTENT_OPTION;
+		((option.action_info + i)->menu_info + 7)->content = MENU_CONTENT_SEPARATOR;
+		((option.action_info + i)->menu_info + 8)->content = MENU_CONTENT_EXIT;
 
 		// hotkey (Alt + C)
 		i++;
@@ -394,7 +439,7 @@ static BOOL ini_read_option(TCHAR *err_str)
 		(option.action_info + i)->modifiers = MOD_ALT;
 		(option.action_info + i)->virtkey = 'C';
 		(option.action_info + i)->paste = 1;
-		(option.action_info + i)->menu_cnt = 5;
+		(option.action_info + i)->menu_cnt = 6;
 		(option.action_info + i)->menu_info = mem_calloc(sizeof(MENU_INFO) * (option.action_info + i)->menu_cnt);
 		if ((option.action_info + i)->menu_info == NULL) {
 			message_get_error(GetLastError(), err_str);
@@ -416,7 +461,8 @@ static BOOL ini_read_option(TCHAR *err_str)
 			(((option.action_info + i)->menu_info + 2)->mi + 0)->content = MENU_CONTENT_REGIST;
 			(((option.action_info + i)->menu_info + 2)->mi + 0)->path = alloc_copy(TEXT("\\"));
 		((option.action_info + i)->menu_info + 3)->content = MENU_CONTENT_SEPARATOR;
-		((option.action_info + i)->menu_info + 4)->content = MENU_CONTENT_CANCEL;
+		((option.action_info + i)->menu_info + 4)->content = MENU_CONTENT_SEARCH;
+		((option.action_info + i)->menu_info + 5)->content = MENU_CONTENT_CANCEL;
 
 		// hotkey (Alt + T)
 		i++;
@@ -437,6 +483,17 @@ static BOOL ini_read_option(TCHAR *err_str)
 		((option.action_info + i)->menu_info + 0)->content = MENU_CONTENT_TOOL;
 		((option.action_info + i)->menu_info + 1)->content = MENU_CONTENT_SEPARATOR;
 		((option.action_info + i)->menu_info + 2)->content = MENU_CONTENT_CANCEL;
+
+		// hotkey (Alt + F)
+		i++;
+		(option.action_info + i)->action = ACTION_SEARCH;
+		(option.action_info + i)->type = ACTION_TYPE_HOTKEY;
+		(option.action_info + i)->enable = 1;
+		(option.action_info + i)->caret = 0;
+		(option.action_info + i)->id = HKEY_ID + i;
+		(option.action_info + i)->modifiers = MOD_ALT;
+		(option.action_info + i)->virtkey = 'F';
+		(option.action_info + i)->paste = 1;
 	} else {
 		if ((option.action_info = mem_calloc(sizeof(ACTION_INFO) * option.action_cnt)) == NULL) {
 			message_get_error(GetLastError(), err_str);
@@ -472,6 +529,9 @@ static BOOL ini_read_option(TCHAR *err_str)
 					return FALSE;
 				}
 			}
+		}
+		if (version < 222) {
+			ini_ensure_search_action();
 		}
 	}
 

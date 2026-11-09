@@ -167,6 +167,7 @@
     <ClCompile Include="main.c" />
     <ClCompile Include="Memory.c" />
     <ClCompile Include="Menu.c" />
+    <ClCompile Include="MenuFilter.c" />
     <ClCompile Include="Message.c" />
     <ClCompile Include="OleDragDrop.c" />
     <ClCompile Include="Profile.c" />
@@ -174,6 +175,7 @@
     <ClCompile Include="SelectFolder.c" />
     <ClCompile Include="SelectFormat.c" />
     <ClCompile Include="Security.c" />
+    <ClCompile Include="Search.c" />
     <ClCompile Include="SendKey.c" />
     <ClCompile Include="SetHotkey.c" />
     <ClCompile Include="StatusBar.c" />
@@ -230,6 +232,7 @@
     <ClInclude Include="SelectFolder.h" />
     <ClInclude Include="SelectFormat.h" />
     <ClInclude Include="Security.h" />
+    <ClInclude Include="Search.h" />
     <ClInclude Include="SendKey.h" />
     <ClInclude Include="SetHotkey.h" />
     <ClInclude Include="StatusBar.h" />

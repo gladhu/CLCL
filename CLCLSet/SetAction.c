@@ -418,15 +418,16 @@ static void set_enable_control(const HWND hDlg)
 {
 	BOOL menu;
 	BOOL enable;
+	int action;
 	int i;
 
-	i = SendDlgItemMessage(hDlg, IDC_COMBO_ACTION, CB_GETCURSEL, 0, 0);
-	menu = (i == ACTION_POPUPMEMU) ? TRUE : FALSE;
+	action = (int)SendDlgItemMessage(hDlg, IDC_COMBO_ACTION, CB_GETCURSEL, 0, 0);
+	menu = (action == ACTION_POPUPMEMU) ? TRUE : FALSE;
 
-	i = SendDlgItemMessage(hDlg, IDC_COMBO_TYPE, CB_GETCURSEL, 0, 0);
+	i = (int)SendDlgItemMessage(hDlg, IDC_COMBO_TYPE, CB_GETCURSEL, 0, 0);
 	EnableWindow(GetDlgItem(hDlg, IDC_HOTKEY), i == ACTION_TYPE_HOTKEY);
 
-	EnableWindow(GetDlgItem(hDlg, IDC_CHECK_PASTE), menu);
+	EnableWindow(GetDlgItem(hDlg, IDC_CHECK_PASTE), (menu == TRUE || action == ACTION_SEARCH) ? TRUE : FALSE);
 	enable = menu &&
 		(i == ACTION_TYPE_HOTKEY ||
 		i == ACTION_TYPE_CTRL_CTRL ||
@@ -456,7 +457,8 @@ static void set_enable_control(const HWND hDlg)
 		i == MENU_CONTENT_TOOL ||
 		i == MENU_CONTENT_APP ||
 		i == MENU_CONTENT_CANCEL ||
-		i == MENU_CONTENT_EXIT);
+		i == MENU_CONTENT_EXIT ||
+		i == MENU_CONTENT_SEARCH);
 	EnableWindow(GetDlgItem(hDlg, IDC_EDIT_TITLE), enable);
 	EnableWindow(GetDlgItem(hDlg, IDC_EDIT_ICON_FILE), enable);
 	EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_ICON_FILE_SELECT), enable);
@@ -556,6 +558,11 @@ static TCHAR *get_tree_text(const MENU_INFO *menu_info)
 	case MENU_CONTENT_EXIT:
 		ret = (menu_info->title == NULL || *menu_info->title == TEXT('\0')) ?
 			message_get_res(IDS_MENU_EXIT) : menu_info->title;
+		break;
+
+	case MENU_CONTENT_SEARCH:
+		ret = (menu_info->title == NULL || *menu_info->title == TEXT('\0')) ?
+			message_get_res(IDS_ACTION_CONTENT_SEARCH) : menu_info->title;
 		break;
 
 	default:
@@ -798,6 +805,7 @@ static INT_PTR CALLBACK set_action_item_proc(HWND hDlg, UINT uMsg, WPARAM wParam
 		SET_COMBO_ITEM(IDC_COMBO_ACTION, message_get_res(IDS_ACTION_OPTION));
 		SET_COMBO_ITEM(IDC_COMBO_ACTION, message_get_res(IDS_ACTION_CLIPBOARD_WATCH));
 		SET_COMBO_ITEM(IDC_COMBO_ACTION, message_get_res(IDS_ACTION_EXIT));
+		SET_COMBO_ITEM(IDC_COMBO_ACTION, message_get_res(IDS_ACTION_SEARCH));
 
 		SET_COMBO_ITEM(IDC_COMBO_TYPE, message_get_res(IDS_ACTION_TYPE_HOTKEY));
 		SET_COMBO_ITEM(IDC_COMBO_TYPE, message_get_res(IDS_ACTION_TYPE_CTRL_CTRL));
@@ -821,6 +829,7 @@ static INT_PTR CALLBACK set_action_item_proc(HWND hDlg, UINT uMsg, WPARAM wParam
 		SET_COMBO_ITEM(IDC_COMBO_CONTENT, message_get_res(IDS_ACTION_CONTENT_APP));
 		SET_COMBO_ITEM(IDC_COMBO_CONTENT, message_get_res(IDS_ACTION_CONTENT_CANCEL));
 		SET_COMBO_ITEM(IDC_COMBO_CONTENT, message_get_res(IDS_ACTION_CONTENT_EXIT));
+		SET_COMBO_ITEM(IDC_COMBO_CONTENT, message_get_res(IDS_ACTION_CONTENT_SEARCH));
 
 		if (lParam == 0) {
 			// 新規追加
@@ -1241,6 +1250,10 @@ static void listview_set_text(const HWND hListView, const int i)
 
 	case ACTION_EXIT:
 		p = message_get_res(IDS_ACTION_EXIT);
+		break;
+
+	case ACTION_SEARCH:
+		p = message_get_res(IDS_ACTION_SEARCH);
 		break;
 
 	default:

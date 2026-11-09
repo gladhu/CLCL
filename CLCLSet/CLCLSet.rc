@@ -673,8 +673,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,2,1,0
- PRODUCTVERSION 2,2,1,0
+ FILEVERSION 2,2,2,0
+ PRODUCTVERSION 2,2,2,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -690,12 +690,12 @@ BEGIN
         BLOCK "041104b0"
         BEGIN
             VALUE "FileDescription", "CLCLSet"
-            VALUE "FileVersion", "2.2.1.0"
+            VALUE "FileVersion", "2.2.2.0"
             VALUE "InternalName", "CLCLSet.exe"
             VALUE "LegalCopyright", "Copyright (C) 1996-2026 by Ohno Tomoaki. All rights reserved."
             VALUE "OriginalFilename", "CLCLSet.exe"
             VALUE "ProductName", "CLCL"
-            VALUE "ProductVersion", "2.2.1.0"
+            VALUE "ProductVersion", "2.2.2.0"
         END
     END
     BLOCK "VarFileInfo"
@@ -771,6 +771,7 @@ BEGIN
     IDS_ACTION_OPTION       "オプション"
     IDS_ACTION_CLIPBOARD_WATCH "クリップボード監視切替"
     IDS_ACTION_EXIT         "終了"
+    IDS_ACTION_SEARCH       "検索"
     IDS_ACTION_TYPE_HOTKEY  "ホットキー"
     IDS_ACTION_TYPE_CTRL_CTRL "Ctrl + Ctrl"
     IDS_ACTION_TYPE_SHIFT_SHIFT "Shift + Shift"
@@ -796,6 +797,7 @@ BEGIN
     IDS_ACTION_CONTENT_APP  "外部アプリケーション"
     IDS_ACTION_CONTENT_CANCEL "キャンセル"
     IDS_ACTION_CONTENT_EXIT "終了"
+    IDS_ACTION_CONTENT_SEARCH "検索"
     IDS_ACTION_TREE_MENU    "メニュー"
     IDS_ACTION_TREE_NEW     "(新規作成)"
     IDS_ACTION_TREE_SEP     "------------------"
@@ -1638,6 +1640,7 @@ BEGIN
     IDS_ACTION_OPTION       "选项"
     IDS_ACTION_CLIPBOARD_WATCH "监测剪贴板"
     IDS_ACTION_EXIT         "退出"
+    IDS_ACTION_SEARCH       "搜索"
     IDS_ACTION_TYPE_HOTKEY  "热键"
     IDS_ACTION_TYPE_CTRL_CTRL "Ctrl + Ctrl"
     IDS_ACTION_TYPE_SHIFT_SHIFT "Shift + Shift"
@@ -1663,6 +1666,7 @@ BEGIN
     IDS_ACTION_CONTENT_APP  "外部应用程序"
     IDS_ACTION_CONTENT_CANCEL "取消"
     IDS_ACTION_CONTENT_EXIT "退出"
+    IDS_ACTION_CONTENT_SEARCH "搜索"
     IDS_ACTION_TREE_MENU    "菜单"
     IDS_ACTION_TREE_NEW     "(新内容)"
     IDS_ACTION_TREE_SEP     "-------------------------"
@@ -2505,6 +2509,7 @@ BEGIN
     IDS_ACTION_OPTION       "Параметри"
     IDS_ACTION_CLIPBOARD_WATCH "Спостереження за буфером"
     IDS_ACTION_EXIT         "Вихід"
+    IDS_ACTION_SEARCH       "Пошук"
     IDS_ACTION_TYPE_HOTKEY  "Гаряча клавіша"
     IDS_ACTION_TYPE_CTRL_CTRL "Ctrl + Ctrl"
     IDS_ACTION_TYPE_SHIFT_SHIFT "Shift + Shift"
@@ -2531,6 +2536,7 @@ BEGIN
     IDS_ACTION_CONTENT_APP  "Зовнішній додаток"
     IDS_ACTION_CONTENT_CANCEL "Скасувати"
     IDS_ACTION_CONTENT_EXIT "Вихід"
+    IDS_ACTION_CONTENT_SEARCH "Пошук"
     IDS_ACTION_TREE_MENU    "Меню"
     IDS_ACTION_TREE_NEW     "(Новий вміст)"
     IDS_ACTION_TREE_SEP     "-------------------------"
@@ -3339,6 +3345,7 @@ BEGIN
     IDS_ACTION_OPTION       "Options"
     IDS_ACTION_CLIPBOARD_WATCH "Toggle Clipboard Watch"
     IDS_ACTION_EXIT         "Exit"
+    IDS_ACTION_SEARCH       "Search"
     IDS_ACTION_TYPE_HOTKEY  "Hot key"
     IDS_ACTION_TYPE_CTRL_CTRL "Ctrl + Ctrl"
     IDS_ACTION_TYPE_SHIFT_SHIFT "Shift + Shift"
@@ -3364,6 +3371,7 @@ BEGIN
     IDS_ACTION_CONTENT_APP  "External Application"
     IDS_ACTION_CONTENT_CANCEL "Cancel"
     IDS_ACTION_CONTENT_EXIT "Exit"
+    IDS_ACTION_CONTENT_SEARCH "Search"
     IDS_ACTION_TREE_MENU    "Menu"
     IDS_ACTION_TREE_NEW     "(New content)"
     IDS_ACTION_TREE_SEP     "-------------------------"
@@ -4179,6 +4187,7 @@ BEGIN
     IDS_ACTION_OPTION       "Einstellungen"
     IDS_ACTION_CLIPBOARD_WATCH "Zwischenablage-Überwachung"
     IDS_ACTION_EXIT         "Beenden"
+    IDS_ACTION_SEARCH       "Suchen"
     IDS_ACTION_TYPE_HOTKEY  "Hotkey"
     IDS_ACTION_TYPE_CTRL_CTRL "Ctrl + Ctrl"
     IDS_ACTION_TYPE_SHIFT_SHIFT "Shift + Shift"
@@ -4204,6 +4213,7 @@ BEGIN
     IDS_ACTION_CONTENT_APP  "Externe Anwendung"
     IDS_ACTION_CONTENT_CANCEL "Abbrechen"
     IDS_ACTION_CONTENT_EXIT "Beenden"
+    IDS_ACTION_CONTENT_SEARCH "Suchen"
     IDS_ACTION_TREE_MENU    "Menü"
     IDS_ACTION_TREE_NEW     "(Neuer Eintrag)"
     IDS_ACTION_TREE_SEP     "-------------------------"

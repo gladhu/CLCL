@@ -31,6 +31,7 @@
 #define MENU_CONTENT_APP				10
 #define MENU_CONTENT_CANCEL				11
 #define MENU_CONTENT_EXIT				12
+#define MENU_CONTENT_SEARCH				13
 
 /* Struct */
 // menu item
@@ -89,6 +90,11 @@ void menu_free(void);
 void menu_free_icons(void);
 void menu_set_dpi(const POINT *mpos);
 int menu_show(const HWND hWnd, const HMENU hMenu, const POINT *mpos);
+int menu_item_extent(const MENU_ITEM_INFO *mii, int *width);
+HFONT menu_font_create(void);
+int menu_filter_show(const HWND hWnd, const HMENU hMenu, const POINT *mpos,
+	MENU_ITEM_INFO *items, const int count);
+void menu_key_hook_pause(void);
 MENU_ITEM_INFO *menu_get_info(const UINT id);
 BOOL menu_check_item_info(const MENU_ITEM_INFO *mii);
 TCHAR *menu_get_keyname(const UINT modifiers, const UINT virtkey);

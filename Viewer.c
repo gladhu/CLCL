@@ -35,6 +35,7 @@
 #include "Filter.h"
 #include "Tool.h"
 #include "Viewer.h"
+#include "Search.h"
 #include "Frame.h"
 #include "ImageList.h"
 #include "TreeView.h"
@@ -2970,6 +2971,11 @@ static LRESULT CALLBACK viewer_message_proc(HWND hWnd, UINT msg, WPARAM wParam, 
 
 		case ID_MENUITEM_EXIT:
 			SendMessage(main_wnd, WM_CLOSE, 0, 0);
+			break;
+
+		case ID_MENUITEM_SEARCH:
+			// 検索
+			search_show(main_wnd, TRUE);
 			break;
 
 		case ID_MENUITEM_SELECT_ALL:
