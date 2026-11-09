@@ -34,7 +34,8 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $InstallerDir = $PSScriptRoot
-$RootDir = Split-Path -Parent $InstallerDir
+$SrcDir = Split-Path -Parent $InstallerDir
+$RepoRoot = Split-Path -Parent $SrcDir
 
 # バージョンの取得
 function Get-ClclVersion([string]$specified) {
@@ -44,7 +45,7 @@ function Get-ClclVersion([string]$specified) {
 			throw "バージョンの指定が正しくありません (例: 2.2.0): $specified"
 		}
 	} else {
-		$rcPath = Join-Path $RootDir "CLCL.rc"
+		$rcPath = Join-Path $SrcDir "CLCL.rc"
 		if (-not (Test-Path $rcPath)) {
 			throw "CLCL.rc が見つかりません: $rcPath"
 		}
@@ -71,12 +72,12 @@ function Get-TargetFiles([string]$binDir) {
 	return [ordered]@{
 		(Join-Path $binDir "CLCL.exe")        = "CLCL.exe"
 		(Join-Path $binDir "CLCLSet.exe")     = "CLCLSet.exe"
-		(Join-Path $RootDir "readme_jp.txt")  = "readme_jp.txt"
-		(Join-Path $RootDir "readme_en.txt")  = "readme_en.txt"
-		(Join-Path $RootDir "readme_de.txt")  = "readme_de.txt"
-		(Join-Path $RootDir "readme_uk.txt")  = "readme_uk.txt"
-		(Join-Path $RootDir "readme_zh.txt")  = "readme_zh.txt"
-		(Join-Path $RootDir "LICENSE")        = "LICENSE.txt"
+		(Join-Path $RepoRoot "readme_jp.txt")  = "readme_jp.txt"
+		(Join-Path $RepoRoot "readme_en.txt")  = "readme_en.txt"
+		(Join-Path $RepoRoot "readme_de.txt")  = "readme_de.txt"
+		(Join-Path $RepoRoot "readme_uk.txt")  = "readme_uk.txt"
+		(Join-Path $RepoRoot "readme_zh.txt")  = "readme_zh.txt"
+		(Join-Path $RepoRoot "LICENSE")        = "LICENSE.txt"
 	}
 }
 
@@ -92,7 +93,7 @@ if ($Mode -eq "Publish") {
 		throw "ビルドしたインストーラが見つかりません: $TargetPath"
 	}
 	if ([string]::IsNullOrEmpty($OutDir)) {
-		$OutDir = Join-Path $InstallerDir "out"
+		$OutDir = Join-Path $RepoRoot "Installer\out"
 	}
 	New-Item -Path $OutDir -ItemType Directory -Force | Out-Null
 	$outPath = Join-Path $OutDir $ver.FileName
@@ -105,7 +106,7 @@ if ([string]::IsNullOrEmpty($OutDir)) {
 	throw "-OutDir を指定してください。"
 }
 if ([string]::IsNullOrEmpty($SourceDir)) {
-	$SourceDir = Join-Path $RootDir $Configuration
+	$SourceDir = Join-Path $RepoRoot $Configuration
 }
 New-Item -Path $OutDir -ItemType Directory -Force | Out-Null
 

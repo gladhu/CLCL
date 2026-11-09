@@ -48,6 +48,7 @@ function Write-Step([string]$message) {
 
 $InstallerDir = $PSScriptRoot
 $RootDir = Split-Path -Parent $InstallerDir
+$RepoRoot = Split-Path -Parent $RootDir
 
 # ------------------------------------------------------------------
 # msbuild の検索
@@ -94,7 +95,7 @@ if ($LASTEXITCODE -ne 0) {
 	throw "ビルドに失敗しました。"
 }
 
-$targetPath = Join-Path $InstallerDir (Join-Path $Configuration "CLCLInst.exe")
+$targetPath = Join-Path $RepoRoot (Join-Path "Installer\$Configuration" "CLCLInst.exe")
 if (-not (Test-Path $targetPath)) {
 	throw "インストーラがビルドされていません: $targetPath"
 }
@@ -116,7 +117,7 @@ if (-not [string]::IsNullOrEmpty($Version)) {
 }
 & (Join-Path $InstallerDir "prepare.ps1") @publishArgs
 
-$outRoot = if ([string]::IsNullOrEmpty($OutDir)) { Join-Path $InstallerDir "out" } else { $OutDir }
+$outRoot = if ([string]::IsNullOrEmpty($OutDir)) { Join-Path $RepoRoot "Installer\out" } else { $OutDir }
 $exe = Get-ChildItem -Path (Join-Path $outRoot "clcl*.exe") -ErrorAction SilentlyContinue |
 	Where-Object { $_.LastWriteTimeUtc -ge (Get-Item $targetPath).LastWriteTimeUtc } |
 	Sort-Object LastWriteTime -Descending | Select-Object -First 1

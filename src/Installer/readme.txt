@@ -25,7 +25,7 @@ Visual Studio 2017 以降 (C++ デスクトップ開発) と Windows SDK が必�
 PowerShell で以下を実行すると、CLCL 本体のビルドからインストーラの作成までを
 一括で行います。
 
-  PS> cd Installer
+  PS> cd src\Installer
   PS> .\build.ps1
 
 作成したインストーラは Installer\out に出力されます。
