@@ -142,7 +142,9 @@
   <ItemGroup>
     <ClCompile Include="BinView.c" />
     <ClCompile Include="Bitmap.c" />
-    <ClCompile Include="Caret.c" />
+    <ClCompile Include="Caret.c">
+      <CompileAs>CompileAsCpp</CompileAs>
+    </ClCompile>
     <ClCompile Include="ClipBoard.c" />
     <ClCompile Include="Container.c" />
     <ClCompile Include="DarkMode.c" />
@@ -161,6 +163,7 @@
     <ClCompile Include="Frame.c" />
     <ClCompile Include="gdip.cpp" />
     <ClCompile Include="History.c" />
+    <ClCompile Include="Hotkey.c" />
     <ClCompile Include="ImageList.c" />
     <ClCompile Include="Ini.c" />
     <ClCompile Include="ListView.c" />
@@ -219,6 +222,7 @@
     <ClInclude Include="gdip.h" />
     <ClInclude Include="General.h" />
     <ClInclude Include="History.h" />
+    <ClInclude Include="Hotkey.h" />
     <ClInclude Include="ImageList.h" />
     <ClInclude Include="Ini.h" />
     <ClInclude Include="ListView.h" />

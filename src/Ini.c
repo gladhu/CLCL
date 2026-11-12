@@ -27,7 +27,7 @@
 #include "SendKey.h"
 #include "dpi.h"
 #include "Security.h"
-#if (defined(_MSC_VER) && _MSC_VER >=  1930)
+#if (defined(_MSC_VER) && _MSC_VER >= 1920)
 #include <versionhelpers.h>
 #endif
 

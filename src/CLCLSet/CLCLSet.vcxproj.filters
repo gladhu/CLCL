@@ -87,6 +87,9 @@
     <ClCompile Include="..\Format.c">
       <Filter>Source Files\CLCL Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Hotkey.c">
+      <Filter>Source Files\CLCL Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Ini.c">
       <Filter>Source Files\CLCL Source Files</Filter>
     </ClCompile>
@@ -176,6 +179,9 @@
       <Filter>Header Files\CLCL Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\General.h">
+      <Filter>Header Files\CLCL Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Hotkey.h">
       <Filter>Header Files\CLCL Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\Ini.h">

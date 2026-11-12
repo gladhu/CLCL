@@ -144,6 +144,7 @@
     <ClCompile Include="..\Data.c" />
     <ClCompile Include="..\dpi.c" />
     <ClCompile Include="..\File.c" />
+    <ClCompile Include="..\Hotkey.c" />
     <ClCompile Include="..\Filter.c" />
     <ClCompile Include="..\Format.c" />
     <ClCompile Include="..\Ini.c" />
@@ -179,6 +180,7 @@
     <ClInclude Include="..\Filter.h" />
     <ClInclude Include="..\Format.h" />
     <ClInclude Include="..\General.h" />
+    <ClInclude Include="..\Hotkey.h" />
     <ClInclude Include="..\Ini.h" />
     <ClInclude Include="..\Menu.h" />
     <ClInclude Include="..\Message.h" />

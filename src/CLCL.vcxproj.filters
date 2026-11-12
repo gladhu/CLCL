@@ -72,6 +72,9 @@
     <ClCompile Include="History.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Hotkey.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="ImageList.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -215,6 +218,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="History.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Hotkey.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ImageList.h">

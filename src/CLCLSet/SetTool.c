@@ -26,6 +26,9 @@
 #include "..\dpi.h"
 #include "..\DarkMode.h"
 #include "..\Security.h"
+#include "..\Data.h"
+#include "..\File.h"
+#include "..\Hotkey.h"
 
 #include "CLCLSet.h"
 #include "SelectKey.h"
@@ -50,6 +53,7 @@ static BOOL dll_to_list(const HWND hDlg, const TCHAR *lib_path, int *old);
 static INT_PTR CALLBACK select_tools_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 static INT_PTR CALLBACK select_tool_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 static void set_call_type(const HWND hDlg, const int call_type);
+static BOOL confirm_tool_hotkey(const HWND hDlg, const UINT modifiers, const UINT virtkey, const void *self);
 static INT_PTR CALLBACK set_tool_item_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 static BOOL show_property(const HWND hDlg, TOOL_INFO *ti);
 static void listview_set_text(const HWND hListView, const int i);
@@ -436,6 +440,36 @@ static void set_call_type(const HWND hDlg, const int call_type)
 }
 
 /*
+ * confirm_tool_hotkey - ツールのホットキーが他と衝突しないか確認する
+ */
+static BOOL confirm_tool_hotkey(const HWND hDlg, const UINT modifiers, const UINT virtkey, const void *self)
+{
+	HOTKEY_BIND list[HOTKEY_BIND_MAX];
+	HWND listview;
+	DATA_INFO *root;
+	TOOL_INFO *ti;
+	int i;
+	int n = 0;
+	int cnt;
+	BOOL ok;
+
+	for (i = 0; i < option.action_cnt; i++) {
+		n = hotkey_push_action(list, n, HOTKEY_BIND_MAX, option.action_info + i);
+	}
+	listview = GetDlgItem(GetParent(hDlg), IDC_LIST_TOOL);
+	cnt = (listview != NULL) ? ListView_GetItemCount(listview) : 0;
+	for (i = 0; i < cnt; i++) {
+		ti = (TOOL_INFO *)listview_get_lparam(listview, i);
+		n = hotkey_push_tool(list, n, HOTKEY_BIND_MAX, ti);
+	}
+	root = hotkey_load_regist();
+	n = hotkey_push_items(list, n, HOTKEY_BIND_MAX, root);
+	ok = hotkey_confirm(hDlg, modifiers, virtkey, list, n, self);
+	data_free(root);
+	return ok;
+}
+
+/*
  * set_tool_item_proc - ツールの項目を設定
  */
 static INT_PTR CALLBACK set_tool_item_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -525,6 +559,29 @@ static INT_PTR CALLBACK set_tool_item_proc(HWND hDlg, UINT uMsg, WPARAM wParam, 
 				MessageBox(hDlg, message_get_res(IDS_TOOL_ERR_TITLE), WINDOW_TITLE, MB_ICONEXCLAMATION);
 				SetFocus(GetDlgItem(hDlg, IDC_EDIT_TITLE));
 				break;
+			}
+
+			{
+				int call_type = 0;
+				int hk;
+				UINT virtkey;
+				UINT modifiers;
+
+				if (IsDlgButtonChecked(hDlg, IDC_CHECK_MENU) == BST_CHECKED) {
+					call_type |= CALLTYPE_MENU;
+				}
+				hk = (int)SendDlgItemMessage(hDlg, IDC_HOTKEY_TOOL, HKM_GETHOTKEY, 0, 0);
+				virtkey = LOBYTE(hk);
+				hk = HIBYTE(hk);
+				modifiers = ((hk & HOTKEYF_SHIFT) ? MOD_SHIFT : 0) |
+					((hk & HOTKEYF_CONTROL) ? MOD_CONTROL : 0) |
+					((hk & HOTKEYF_ALT) ? MOD_ALT : 0) |
+					((hk & HOTKEYF_WIN) ? MOD_WIN : 0);
+				if ((call_type & CALLTYPE_MENU) != 0 && virtkey != 0 &&
+					confirm_tool_hotkey(hDlg, modifiers, virtkey,
+						(const void *)GetWindowLongPtr(hDlg, GWLP_USERDATA)) == FALSE) {
+					break;
+				}
 			}
 
 			if ((ti = (TOOL_INFO *)GetWindowLongPtr(hDlg, GWLP_USERDATA)) == NULL) {

@@ -608,6 +608,31 @@ BEGIN
     IDS_SEARCH_CUE          "キーワードを入力"
 END
 
+STRINGTABLE
+BEGIN
+    430                     "次のホットキーを登録できませんでした。\n"
+    431                     "%s  %s\n    %s と重複しています。\n"
+    432                     "%s  %s\n    他のプログラムまたはシステムが使用中です。\n"
+    433                     "%s  %s\n    Windows が予約している組み合わせです。\n"
+    434                     "%s\n    キーが指定されていません。\n"
+    435                     "%s  %s\n    登録に失敗しました (エラー %u)。\n"
+    436                     "\nCLCL は管理者として実行されていません。管理者権限のウィンドウが前面にあるとき、Windows は登録済みホットキーを渡しません。その場合はキーボードフックで実行します。\n"
+    437                     "動作: %s"
+    438                     "ツール: %s"
+    439                     "登録アイテム: %s"
+    440                     "(無題)"
+    441                     "(なし)"
+    442                     "メニュー"
+    443                     "ビューア"
+    444                     "オプション"
+    445                     "クリップボード監視"
+    446                     "終了"
+    447                     "検索"
+    448                     "%s は %s と重複しています。\n後から登録した方は動作しません。\n\nこのホットキーを使いますか？"
+    449                     "%s は他のプログラムまたはシステムが使用中のため、動作しません。\n\n保存しますか？"
+    450                     "%s は Windows の予約済み組み合わせのため、登録できません。\n\n保存しますか？"
+END
+
 #endif    // Japanese (Japan) resources
 /////////////////////////////////////////////////////////////////////////////
 
@@ -1042,6 +1067,31 @@ BEGIN
     IDS_SEARCH_COLUMN_DATE  "时间"
     IDS_SEARCH_EMPTY_ITEM   "(空)"
     IDS_SEARCH_CUE          "输入要查找的文字"
+END
+
+STRINGTABLE
+BEGIN
+    430                     "以下热键无法注册：\n"
+    431                     "%s  %s\n    与 %s 重复。\n"
+    432                     "%s  %s\n    已被其他程序或系统占用。\n"
+    433                     "%s  %s\n    这是 Windows 保留的组合，无法注册。\n"
+    434                     "%s\n    没有指定按键。\n"
+    435                     "%s  %s\n    注册失败（错误 %u）。\n"
+    436                     "\n另外，CLCL 当前不是以管理员身份运行。焦点在管理员窗口上时，Windows 不会把已注册的热键发给本程序；这种情况会改用键盘钩子触发。\n"
+    437                     "动作: %s"
+    438                     "工具: %s"
+    439                     "模板: %s"
+    440                     "(无标题)"
+    441                     "(未设置)"
+    442                     "弹出菜单"
+    443                     "查看器"
+    444                     "选项"
+    445                     "监视剪贴板"
+    446                     "退出"
+    447                     "搜索"
+    448                     "%s 与 %s 重复。\n后注册的那个不会生效。\n\n仍要使用这个热键吗？"
+    449                     "%s 已被其他程序或系统占用，注册后不会生效。\n\n仍要保存吗？"
+    450                     "%s 是 Windows 保留的组合，无法注册。\n\n仍要保存吗？"
 END
 
 #endif    // Chinese (Simplified, China) resources
@@ -1480,6 +1530,31 @@ BEGIN
     IDS_SEARCH_CUE          "Введіть текст"
 END
 
+STRINGTABLE
+BEGIN
+    430                     "Не вдалося зареєструвати такі гарячі клавіші:\n"
+    431                     "%s  %s\n    Збігається з %s.\n"
+    432                     "%s  %s\n    Уже використовується іншою програмою або системою.\n"
+    433                     "%s  %s\n    Це сполучення зарезервовано Windows.\n"
+    434                     "%s\n    Клавішу не призначено.\n"
+    435                     "%s  %s\n    Не вдалося зареєструвати (помилка %u).\n"
+    436                     "\nCLCL запущено не від імені адміністратора. Коли активне вікно з вищими правами, Windows не передає зареєстровані гарячі клавіші. У цьому випадку спрацює перехоплення клавіатури.\n"
+    437                     "Дія: %s"
+    438                     "Інструмент: %s"
+    439                     "Шаблон: %s"
+    440                     "(без назви)"
+    441                     "(немає)"
+    442                     "Меню"
+    443                     "Переглядач"
+    444                     "Параметри"
+    445                     "Спостереження за буфером"
+    446                     "Вихід"
+    447                     "Пошук"
+    448                     "%s збігається з %s.\nПізніше зареєстрована комбінація не працюватиме.\n\nУсе одно використати?"
+    449                     "%s уже зайнято іншою програмою або системою, тому комбінація не працюватиме.\n\nУсе одно зберегти?"
+    450                     "%s зарезервовано Windows, тому її не можна зареєструвати.\n\nУсе одно зберегти?"
+END
+
 #endif    // Ukrainian (Ukraine) resources
 
 
@@ -1894,6 +1969,31 @@ BEGIN
     IDS_SEARCH_CUE          "Type to search"
 END
 
+STRINGTABLE
+BEGIN
+    430                     "These hotkeys could not be registered:\n"
+    431                     "%s  %s\n    Conflicts with %s.\n"
+    432                     "%s  %s\n    Already used by another program or by Windows.\n"
+    433                     "%s  %s\n    This combination is reserved by Windows.\n"
+    434                     "%s\n    No key is assigned.\n"
+    435                     "%s  %s\n    Registration failed (error %u).\n"
+    436                     "\nCLCL is not running as administrator. Windows does not deliver registered hotkeys while an elevated window is in front; a keyboard hook is used in that case.\n"
+    437                     "Action: %s"
+    438                     "Tool: %s"
+    439                     "Template: %s"
+    440                     "(untitled)"
+    441                     "(none)"
+    442                     "Menu"
+    443                     "Viewer"
+    444                     "Options"
+    445                     "Clipboard watch"
+    446                     "Exit"
+    447                     "Search"
+    448                     "%s conflicts with %s.\nThe later one will not work.\n\nUse it anyway?"
+    449                     "%s is already used by another program or by Windows, so it will not work.\n\nSave it anyway?"
+    450                     "%s is reserved by Windows and cannot be registered.\n\nSave it anyway?"
+END
+
 #endif    // 英語 (米国) resources
 /////////////////////////////////////////////////////////////////////////////
 
@@ -2306,6 +2406,31 @@ BEGIN
     IDS_SEARCH_COLUMN_DATE  "Datum"
     IDS_SEARCH_EMPTY_ITEM   "(leer)"
     IDS_SEARCH_CUE          "Suchtext eingeben"
+END
+
+STRINGTABLE
+BEGIN
+    430                     "Diese Hotkeys konnten nicht registriert werden:\n"
+    431                     "%s  %s\n    Konflikt mit %s.\n"
+    432                     "%s  %s\n    Wird bereits von einem anderen Programm oder von Windows verwendet.\n"
+    433                     "%s  %s\n    Diese Kombination ist von Windows reserviert.\n"
+    434                     "%s\n    Es ist keine Taste festgelegt.\n"
+    435                     "%s  %s\n    Registrierung fehlgeschlagen (Fehler %u).\n"
+    436                     "\nCLCL wird nicht als Administrator ausgeführt. Solange ein Fenster mit höheren Rechten im Vordergrund ist, liefert Windows registrierte Hotkeys nicht aus. In diesem Fall wird ein Tastatur-Hook verwendet.\n"
+    437                     "Aktion: %s"
+    438                     "Tool: %s"
+    439                     "Vorlage: %s"
+    440                     "(ohne Titel)"
+    441                     "(keine)"
+    442                     "Menü"
+    443                     "Anzeige"
+    444                     "Optionen"
+    445                     "Zwischenablage überwachen"
+    446                     "Beenden"
+    447                     "Suchen"
+    448                     "%s ist bereits %s zugeordnet.\nDer später registrierte Hotkey funktioniert nicht.\n\nTrotzdem verwenden?"
+    449                     "%s wird bereits von einem anderen Programm oder von Windows verwendet und funktioniert nicht.\n\nTrotzdem speichern?"
+    450                     "%s ist von Windows reserviert und kann nicht registriert werden.\n\nTrotzdem speichern?"
 END
 
 #endif    // German (Germany) resources

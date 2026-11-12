@@ -16,16 +16,40 @@
 
 #include "General.h"
 #include "Data.h"
+#include "Ini.h"
 #include "DarkMode.h"
+#include "Hotkey.h"
 
 #include "resource.h"
 
 /* Define */
 
 /* Global Variables */
+extern OPTION_INFO option;
+extern DATA_INFO regist_data;
 
 /* Local Function Prototypes */
+static BOOL confirm_item_hotkey(const HWND hDlg, const UINT modifiers, const UINT virtkey, const void *self);
 static INT_PTR CALLBACK set_hotkey_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+/*
+ * confirm_item_hotkey - テンプレートのホットキーが他と衝突しないか確認する
+ */
+static BOOL confirm_item_hotkey(const HWND hDlg, const UINT modifiers, const UINT virtkey, const void *self)
+{
+	HOTKEY_BIND list[HOTKEY_BIND_MAX];
+	int i;
+	int n = 0;
+
+	for (i = 0; i < option.action_cnt; i++) {
+		n = hotkey_push_action(list, n, HOTKEY_BIND_MAX, option.action_info + i);
+	}
+	for (i = 0; i < option.tool_cnt; i++) {
+		n = hotkey_push_tool(list, n, HOTKEY_BIND_MAX, option.tool_info + i);
+	}
+	n = hotkey_push_items(list, n, HOTKEY_BIND_MAX, regist_data.child);
+	return hotkey_confirm(hDlg, modifiers, virtkey, list, n, self);
+}
 
 /*
  * set_hotkey_proc - ホットキー設定ウィンドウプロシージャ
@@ -85,18 +109,31 @@ static INT_PTR CALLBACK set_hotkey_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPA
 				EndDialog(hDlg, FALSE);
 				break;
 			}
-			// ホットキー
-			i = (int)SendDlgItemMessage(hDlg, IDC_HOTKEY_ITEM, HKM_GETHOTKEY, 0, 0);
-			di->op_virtkey = LOBYTE(i);
-			i = HIBYTE(i);
-			di->op_modifiers = ((i & HOTKEYF_SHIFT) ? MOD_SHIFT : 0) |
-				((i & HOTKEYF_CONTROL) ? MOD_CONTROL : 0) |
-				((i & HOTKEYF_ALT) ? MOD_ALT : 0);
-			if (IsDlgButtonChecked(hDlg, IDC_CHECK_WIN) == 1) {
-				di->op_modifiers |= MOD_WIN;
+			{
+				UINT old_mod = di->op_modifiers;
+				UINT old_vk = di->op_virtkey;
+				int old_paste = di->op_paste;
+
+				// ホットキー
+				i = (int)SendDlgItemMessage(hDlg, IDC_HOTKEY_ITEM, HKM_GETHOTKEY, 0, 0);
+				di->op_virtkey = LOBYTE(i);
+				i = HIBYTE(i);
+				di->op_modifiers = ((i & HOTKEYF_SHIFT) ? MOD_SHIFT : 0) |
+					((i & HOTKEYF_CONTROL) ? MOD_CONTROL : 0) |
+					((i & HOTKEYF_ALT) ? MOD_ALT : 0);
+				if (IsDlgButtonChecked(hDlg, IDC_CHECK_WIN) == 1) {
+					di->op_modifiers |= MOD_WIN;
+				}
+				// 貼り付け
+				di->op_paste = IsDlgButtonChecked(hDlg, IDC_CHECK_PASTE);
+				if (di->op_virtkey != 0 &&
+					confirm_item_hotkey(hDlg, di->op_modifiers, di->op_virtkey, di) == FALSE) {
+					di->op_modifiers = old_mod;
+					di->op_virtkey = old_vk;
+					di->op_paste = old_paste;
+					break;
+				}
 			}
-			// 貼り付け
-			di->op_paste = IsDlgButtonChecked(hDlg, IDC_CHECK_PASTE);
 			EndDialog(hDlg, TRUE);
 			break;
 		}

@@ -48,6 +48,7 @@
 #include "Caret.h"
 #include "dpi.h"
 #include "DarkMode.h"
+#include "Hotkey.h"
 #include "Security.h"
 
 #include "resource.h"
@@ -1325,36 +1326,16 @@ static BOOL save_regist(const HWND hWnd)
  */
 static void regist_hotkey(const HWND hWnd, const BOOL show_err)
 {
-	BOOL hk_err = FALSE;
-	int id;
-	int i;
+	TCHAR report[4096];
+	int fails;
 
-	// Action
-	for (i = 0; i < option.action_cnt; i++) {
-		if ((option.action_info + i)->type == ACTION_TYPE_HOTKEY && (option.action_info + i)->enable != 0 &&
-			RegisterHotKey(hWnd, (option.action_info + i)->id,
-			(option.action_info + i)->modifiers, (option.action_info + i)->virtkey) == FALSE) {
-			hk_err = TRUE;
-		}
-	}
-	// Tool
-	for (i = 0; i < option.tool_cnt; i++) {
-		if (((option.tool_info + i)->call_type & CALLTYPE_MENU) &&
-			(option.tool_info + i)->virtkey != 0 &&
-			RegisterHotKey(hWnd, (option.tool_info + i)->id,
-			(option.tool_info + i)->modifiers, (option.tool_info + i)->virtkey) == FALSE) {
-			hk_err = TRUE;
-		}
-	}
-	// Regist
-	id = HKEY_ID + option.action_cnt + option.tool_cnt;
-	if (regist_regist_hotkey(hWnd, regist_data.child, &id) == FALSE) {
-		hk_err = TRUE;
-	}
-
-	if (hk_err == TRUE && option.action_show_hotkey_error == 1 && show_err == TRUE) {
-		// 登録エラー
-		MessageBox(hWnd, message_get_res(IDS_ERROR_HOTKEY), ERROR_TITLE, MB_ICONERROR);
+	// 一度外してから登録し直す。既に登録済みの ID で再度 RegisterHotKey すると失敗する
+	unregist_hotkey(hWnd);
+	fails = hotkey_register_all(hWnd, &option, regist_data.child, report, 4096);
+	regist_hook(hWnd);
+	if (fails > 0 && option.action_show_hotkey_error == 1 && show_err == TRUE && report[0] != TEXT('\0')) {
+		_SetForegroundWindow(hWnd);
+		MessageBox(hWnd, report, ERROR_TITLE, MB_ICONWARNING);
 	}
 }
 
@@ -1365,6 +1346,8 @@ static void unregist_hotkey(const HWND hWnd)
 {
 	int i;
 
+	// フックが解除前の組み合わせを奪わないように先に消す
+	hotkey_clear_slots();
 	// Action
 	for (i = 0; i < option.action_cnt; i++) {
 		if ((option.action_info + i)->type == ACTION_TYPE_HOTKEY && (option.action_info + i)->enable != 0) {
@@ -1449,6 +1432,15 @@ static LRESULT CALLBACK key_hook_proc(int nCode, WPARAM wParam, LPARAM lParam)
 			break;
 		}
 		PostMessage(key_hook_wnd, WM_KEY_HOOK, vk, ((kb->flags & LLKHF_UP) != 0) ? (LPARAM)0x80000000 : 0);
+		if ((kb->flags & (LLKHF_UP | LLKHF_INJECTED)) == 0) {
+			int hot_id;
+
+			// 高権限ウィンドウが前面にあると RegisterHotKey は届かない
+			if (hotkey_hook_match(kb, &hot_id) == TRUE &&
+				PostMessage(key_hook_wnd, WM_HOTKEY, (WPARAM)hot_id, 0) != 0) {
+				return 1;
+			}
+		}
 	}
 	return CallNextHookEx(key_hook, nCode, wParam, lParam);
 }
@@ -1494,40 +1486,53 @@ static DWORD WINAPI key_hook_thread_proc(LPVOID param)
 /*
  * regist_hook - フックの登録
  */
-static void regist_hook(const HWND hWnd)
+static BOOL hook_required(void)
 {
-	HANDLE ready;
 	int i;
 
-	if (key_hook_thread != NULL) {
-		return;
+	if (hotkey_has_slots() == TRUE) {
+		return TRUE;
 	}
-	// フックの登録
 	for (i = 0; i < option.action_cnt; i++) {
 		if ((option.action_info + i)->enable != 0 &&
 			((option.action_info + i)->type == ACTION_TYPE_CTRL_CTRL ||
 			(option.action_info + i)->type == ACTION_TYPE_SHIFT_SHIFT ||
 			(option.action_info + i)->type == ACTION_TYPE_ALT_ALT)) {
-			if ((ready = CreateEvent(NULL, TRUE, FALSE, NULL)) == NULL) {
-				hook_error(hWnd, GetLastError());
-				break;
-			}
-			key_hook_wnd = hWnd;
-			key_hook_err = ERROR_SUCCESS;
-			key_hook_thread = CreateThread(NULL, 0, key_hook_thread_proc, ready, 0, &key_hook_thread_id);
-			if (key_hook_thread == NULL) {
-				key_hook_err = GetLastError();
-			} else {
-				WaitForSingleObject(ready, INFINITE);
-			}
-			CloseHandle(ready);
-			if (key_hook_err != ERROR_SUCCESS) {
-				// フックを開始できなかった
-				hook_error(hWnd, key_hook_err);
-				unregist_hook();
-			}
-			break;
+			return TRUE;
 		}
+	}
+	return FALSE;
+}
+
+static void regist_hook(const HWND hWnd)
+{
+	HANDLE ready;
+
+	if (hook_required() == FALSE) {
+		unregist_hook();
+		return;
+	}
+	if (key_hook_thread != NULL) {
+		return;
+	}
+	// フックの登録
+	if ((ready = CreateEvent(NULL, TRUE, FALSE, NULL)) == NULL) {
+		hook_error(hWnd, GetLastError());
+		return;
+	}
+	key_hook_wnd = hWnd;
+	key_hook_err = ERROR_SUCCESS;
+	key_hook_thread = CreateThread(NULL, 0, key_hook_thread_proc, ready, 0, &key_hook_thread_id);
+	if (key_hook_thread == NULL) {
+		key_hook_err = GetLastError();
+	} else {
+		WaitForSingleObject(ready, INFINITE);
+	}
+	CloseHandle(ready);
+	if (key_hook_err != ERROR_SUCCESS) {
+		// フックを開始できなかった
+		hook_error(hWnd, key_hook_err);
+		unregist_hook();
 	}
 }
 

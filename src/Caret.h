@@ -18,8 +18,14 @@
 /* Struct */
 
 /* Function Prototypes */
+#ifdef __cplusplus
+extern "C" {
+#endif
 BOOL caret_get_pos(const HWND active_wnd, const HWND focus_wnd, POINT *pt);
 void caret_free(void);
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 /* End of source */

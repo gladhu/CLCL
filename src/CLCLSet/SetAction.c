@@ -26,6 +26,7 @@
 #include "..\Data.h"
 #include "..\dpi.h"
 #include "..\DarkMode.h"
+#include "..\Hotkey.h"
 
 #include "CLCLSet.h"
 #include "SelectIcon.h"
@@ -49,6 +50,7 @@ extern TCHAR work_path[];
 extern OPTION_INFO option;
 
 /* Local Function Prototypes */
+static BOOL confirm_action_hotkey(const HWND hDlg, const UINT modifiers, const UINT virtkey, const void *self);
 static HTREEITEM treeview_set_item(const HWND hTreeView, TCHAR *buf, const HTREEITEM hParent, const HTREEITEM After, LPARAM lParam);
 static BOOL treeview_set_text(const HWND hTreeView, const HTREEITEM hItem, TCHAR *text);
 static BOOL treeview_set_lparam(const HWND hTreeView, const HTREEITEM hItem, const LPARAM lParam);
@@ -207,6 +209,35 @@ static HTREEITEM treeview_set_item(const HWND hTreeView, TCHAR *buf, const HTREE
 	tvitn.hParent = hParent;
 	tvitn.item = tvit;
 	return TreeView_InsertItem(hTreeView, &tvitn);
+}
+
+/*
+ * confirm_action_hotkey - 動作のホットキーが他と衝突しないか確認する
+ */
+static BOOL confirm_action_hotkey(const HWND hDlg, const UINT modifiers, const UINT virtkey, const void *self)
+{
+	HOTKEY_BIND list[HOTKEY_BIND_MAX];
+	HWND listview;
+	DATA_INFO *root;
+	ACTION_INFO *ai;
+	int i;
+	int n = 0;
+	int cnt;
+
+	listview = GetDlgItem(GetParent(hDlg), IDC_LIST_ACTION);
+	cnt = (listview != NULL) ? ListView_GetItemCount(listview) : 0;
+	for (i = 0; i < cnt; i++) {
+		ai = (ACTION_INFO *)listview_get_lparam(listview, i);
+		n = hotkey_push_action(list, n, HOTKEY_BIND_MAX, ai);
+	}
+	for (i = 0; i < option.tool_cnt; i++) {
+		n = hotkey_push_tool(list, n, HOTKEY_BIND_MAX, option.tool_info + i);
+	}
+	root = hotkey_load_regist();
+	n = hotkey_push_items(list, n, HOTKEY_BIND_MAX, root);
+	i = hotkey_confirm(hDlg, modifiers, virtkey, list, n, self);
+	data_free(root);
+	return i;
 }
 
 /*
@@ -1040,6 +1071,25 @@ static INT_PTR CALLBACK set_action_item_proc(HWND hDlg, UINT uMsg, WPARAM wParam
 			}
 
 			TreeView_SelectItem(GetDlgItem(hDlg, IDC_TREE_MENU), NULL);
+
+			{
+				int type = (int)SendDlgItemMessage(hDlg, IDC_COMBO_TYPE, CB_GETCURSEL, 0, 0);
+				int enable = (int)IsDlgButtonChecked(hDlg, IDC_CHECK_ENABLE);
+				int hk = (int)SendDlgItemMessage(hDlg, IDC_HOTKEY, HKM_GETHOTKEY, 0, 0);
+				UINT virtkey = LOBYTE(hk);
+				UINT modifiers;
+
+				hk = HIBYTE(hk);
+				modifiers = ((hk & HOTKEYF_SHIFT) ? MOD_SHIFT : 0) |
+					((hk & HOTKEYF_CONTROL) ? MOD_CONTROL : 0) |
+					((hk & HOTKEYF_ALT) ? MOD_ALT : 0) |
+					((hk & HOTKEYF_WIN) ? MOD_WIN : 0);
+				if (type == ACTION_TYPE_HOTKEY && enable != 0 && virtkey != 0 &&
+					confirm_action_hotkey(hDlg, modifiers, virtkey,
+						(const void *)GetWindowLongPtr(hDlg, GWLP_USERDATA)) == FALSE) {
+					break;
+				}
+			}
 
 			if ((ai = (ACTION_INFO *)GetWindowLongPtr(hDlg, GWLP_USERDATA)) == NULL) {
 				ai = mem_calloc(sizeof(ACTION_INFO));

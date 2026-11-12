@@ -9,9 +9,12 @@
  */
 
 /* Include Files */
+/* SDK 10.0.19041 UIAutomationCoreApi.h uses C++ enum types, so this file is
+   compiled as C++. CINTERFACE keeps the COBJMACROS vtable calls working. */
+#define CINTERFACE
+#define COBJMACROS
 #include <windows.h>
 #include <tchar.h>
-#define COBJMACROS
 #include <oleacc.h>
 #include <uiautomation.h>
 
@@ -31,6 +34,12 @@
 #endif
 #ifndef UIA_TextPattern2Id
 #define UIA_TextPattern2Id				10024
+#endif
+
+#ifdef __cplusplus
+#define CARET_IID(x)					(x)
+#else
+#define CARET_IID(x)					(&(x))
 #endif
 
 /* Global Variables */
@@ -109,7 +118,7 @@ static BOOL caret_get_msaa_pos(const HWND focus_wnd, POINT *pt)
 	}
 	// キャレットのオブジェクトを取得
 	if (FAILED(_AccessibleObjectFromWindow(focus_wnd, (DWORD)OBJID_CARET,
-		&IID_IAccessible, (void **)&acc)) || acc == NULL) {
+		CARET_IID(IID_IAccessible), (void **)&acc)) || acc == NULL) {
 		return FALSE;
 	}
 	VariantInit(&v);
@@ -197,8 +206,8 @@ static BOOL caret_get_uia_pos(POINT *pt)
 	BOOL ret = FALSE;
 
 	if (uia_automation == NULL &&
-		(FAILED(CoCreateInstance(&CLSID_CUIAutomation, NULL, CLSCTX_INPROC_SERVER,
-			&IID_IUIAutomation, (void **)&uia_automation)) || uia_automation == NULL)) {
+		(FAILED(CoCreateInstance(CARET_IID(CLSID_CUIAutomation), NULL, CLSCTX_INPROC_SERVER,
+			CARET_IID(IID_IUIAutomation), (void **)&uia_automation)) || uia_automation == NULL)) {
 		uia_automation = NULL;
 		return FALSE;
 	}
@@ -208,7 +217,7 @@ static BOOL caret_get_uia_pos(POINT *pt)
 	}
 	// キャレットの位置から取得
 	if (SUCCEEDED(IUIAutomationElement_GetCurrentPatternAs(element, UIA_TextPattern2Id,
-		&IID_IUIAutomationTextPattern2, (void **)&text2)) && text2 != NULL) {
+		CARET_IID(IID_IUIAutomationTextPattern2), (void **)&text2)) && text2 != NULL) {
 		if (SUCCEEDED(IUIAutomationTextPattern2_GetCaretRange(text2, &active, &range)) && range != NULL) {
 			ret = caret_range_to_pos(range, pt);
 			IUIAutomationTextRange_Release(range);
@@ -219,7 +228,7 @@ static BOOL caret_get_uia_pos(POINT *pt)
 	// 選択範囲の位置から取得
 	if (ret == FALSE &&
 		SUCCEEDED(IUIAutomationElement_GetCurrentPatternAs(element, UIA_TextPatternId,
-			&IID_IUIAutomationTextPattern, (void **)&text)) && text != NULL) {
+			CARET_IID(IID_IUIAutomationTextPattern), (void **)&text)) && text != NULL) {
 		if (SUCCEEDED(IUIAutomationTextPattern_GetSelection(text, &ranges)) && ranges != NULL) {
 			if (SUCCEEDED(IUIAutomationTextRangeArray_get_Length(ranges, &cnt)) && cnt > 0 &&
 				SUCCEEDED(IUIAutomationTextRangeArray_GetElement(ranges, 0, &range)) && range != NULL) {
