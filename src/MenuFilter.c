@@ -33,6 +33,7 @@
 #define FILTER_CLASS			TEXT("CLCLMenuFilter")
 #define IDC_FILTER_EDIT			1001
 #define IDC_FILTER_LIST			1002
+#define IDC_FILTER_PIN			1003
 #define FILTER_TIMER			1
 #define FILTER_WATCH			2
 
@@ -47,6 +48,9 @@ static BOOL filter_class_ready;
 static HWND filter_wnd;
 static HWND filter_edit;
 static HWND filter_list;
+static HWND filter_pin;
+static int filter_hist_h;
+static int filter_pin_h;
 static HWND filter_owner;
 static HMENU filter_menu;
 static MENU_ITEM_INFO *filter_items;
@@ -67,7 +71,7 @@ static BOOL filter_related(const HWND hWnd);
 static BOOL filter_data_match(const MENU_ITEM_INFO *mii, const TCHAR *needle);
 static void filter_fill(const TCHAR *needle);
 static void filter_move(const int dir);
-static void filter_activate(MENU_ITEM_INFO *mii);
+static void filter_activate(MENU_ITEM_INFO *mii, HWND host);
 static LRESULT CALLBACK filter_edit_subclass(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 static LRESULT CALLBACK filter_list_subclass(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 static LRESULT CALLBACK filter_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -123,25 +127,72 @@ static BOOL filter_data_match(const MENU_ITEM_INFO *mii, const TCHAR *needle)
 }
 
 /*
- * filter_add - 一覧へ項目を追加
+ * filter_is_command - 模板、搜索、取消始终留在列表外面
  */
-static void filter_add(MENU_ITEM_INFO *mii)
+static BOOL filter_is_command(const MENU_ITEM_INFO *mii)
 {
-	int index;
+	if (mii == NULL || mii->item == NULL) {
+		return FALSE;
+	}
+	if (mii->id == ID_MENUITEM_SEARCH || mii->id == IDCANCEL) {
+		return TRUE;
+	}
+	if ((mii->flag & MF_POPUP) != 0) {
+		return TRUE;
+	}
+	return FALSE;
+}
+
+/*
+ * filter_pin_index - 固定项从这里开始，前面的分隔线也留在固定区
+ */
+static int filter_pin_index(void)
+{
+	int i;
+	int start;
+
+	start = filter_item_cnt;
+	for (i = 0; i < filter_item_cnt; i++) {
+		if (filter_is_command(filter_items + i) == TRUE) {
+			start = i;
+			break;
+		}
+	}
+	if (start > 0 && ((filter_items + start - 1)->flag & MF_SEPARATOR) != 0) {
+		start--;
+	}
+	return start;
+}
+
+/*
+ * filter_row_height - 一行的像素高度
+ */
+static int filter_row_height(const MENU_ITEM_INFO *mii)
+{
 	int height;
 
-	if (filter_list == NULL || mii == NULL) {
-		return;
-	}
-	index = (int)SendMessage(filter_list, LB_ADDSTRING, 0, (LPARAM)mii);
-	if (index < 0) {
-		return;
-	}
 	height = menu_item_extent(mii, NULL);
 	if (height < Scale(8)) {
 		height = Scale(22);
 	}
-	SendMessage(filter_list, LB_SETITEMHEIGHT, index, height);
+	return height;
+}
+
+/*
+ * filter_add - 一覧へ項目を追加
+ */
+static void filter_add(HWND list, MENU_ITEM_INFO *mii)
+{
+	int index;
+
+	if (list == NULL || mii == NULL) {
+		return;
+	}
+	index = (int)SendMessage(list, LB_ADDSTRING, 0, (LPARAM)mii);
+	if (index < 0) {
+		return;
+	}
+	SendMessage(list, LB_SETITEMHEIGHT, index, filter_row_height(mii));
 }
 
 /*
@@ -165,19 +216,26 @@ static void filter_fill(const TCHAR *needle)
 	seen_tail = FALSE;
 	need_sep = FALSE;
 	SendMessage(filter_list, LB_RESETCONTENT, 0, 0);
+	if (filter_pin != NULL) {
+		SendMessage(filter_pin, LB_RESETCONTENT, 0, 0);
+	}
 
 	for (i = 0; i < filter_item_cnt; i++) {
 		mii = filter_items + i;
 		if (mii->item == NULL) {
 			continue;
 		}
+		if (i >= filter_pin_index()) {
+			filter_add(filter_pin, mii);
+			continue;
+		}
 		if (mii->flag & MF_SEPARATOR) {
 			if (filtering == FALSE) {
-				filter_add(mii);
+				filter_add(filter_list, mii);
 			} else if (seen_tail == FALSE) {
 				need_sep = TRUE;
 			} else {
-				filter_add(mii);
+				filter_add(filter_list, mii);
 			}
 			continue;
 		}
@@ -185,15 +243,15 @@ static void filter_fill(const TCHAR *needle)
 			if (filtering == TRUE && filter_data_match(mii, needle) == FALSE) {
 				continue;
 			}
-			filter_add(mii);
+			filter_add(filter_list, mii);
 			seen_data = TRUE;
 			continue;
 		}
 		if (filtering == TRUE && seen_tail == FALSE && (need_sep == TRUE || seen_data == TRUE)) {
-			filter_add(&filter_sep);
+			filter_add(filter_list, &filter_sep);
 		}
 		seen_tail = TRUE;
-		filter_add(mii);
+		filter_add(filter_list, mii);
 	}
 
 	if (filtering == TRUE && seen_data == FALSE) {
@@ -225,35 +283,110 @@ static void filter_fill(const TCHAR *needle)
 /*
  * filter_move - 選択行を移動
  */
-static void filter_move(const int dir)
+static BOOL filter_selectable(const MENU_ITEM_INFO *mii)
+{
+	if (mii == NULL || mii == (MENU_ITEM_INFO *)LB_ERR || mii == &filter_none) {
+		return FALSE;
+	}
+	if ((mii->flag & MF_SEPARATOR) != 0) {
+		return FALSE;
+	}
+	return TRUE;
+}
+
+static int filter_step(HWND list, int index, const int dir)
 {
 	int cnt;
-	int i;
 	MENU_ITEM_INFO *mii;
 
-	if (filter_list == NULL || dir == 0) {
-		return;
+	if (list == NULL || dir == 0) {
+		return -1;
 	}
-	cnt = (int)SendMessage(filter_list, LB_GETCOUNT, 0, 0);
-	i = (int)SendMessage(filter_list, LB_GETCURSEL, 0, 0);
-	if (i < 0) {
-		i = (dir > 0) ? -1 : cnt;
-	}
+	cnt = (int)SendMessage(list, LB_GETCOUNT, 0, 0);
 	for (;;) {
-		i += dir;
-		if (i < 0 || i >= cnt) {
-			SendMessage(filter_list, LB_SETCURSEL, (WPARAM)-1, 0);
-			return;
+		index += dir;
+		if (index < 0 || index >= cnt) {
+			return -1;
 		}
-		mii = (MENU_ITEM_INFO *)SendMessage(filter_list, LB_GETITEMDATA, i, 0);
-		if (mii == NULL || mii == (MENU_ITEM_INFO *)LB_ERR || mii == &filter_none) {
-			continue;
+		mii = (MENU_ITEM_INFO *)SendMessage(list, LB_GETITEMDATA, index, 0);
+		if (filter_selectable(mii) == TRUE) {
+			return index;
 		}
-		if (mii->flag & MF_SEPARATOR) {
-			continue;
-		}
-		SendMessage(filter_list, LB_SETCURSEL, i, 0);
+	}
+}
+
+static void filter_select(HWND list, const int index)
+{
+	if (filter_list != NULL && filter_list != list) {
+		SendMessage(filter_list, LB_SETCURSEL, (WPARAM)-1, 0);
+	}
+	if (filter_pin != NULL && filter_pin != list) {
+		SendMessage(filter_pin, LB_SETCURSEL, (WPARAM)-1, 0);
+	}
+	if (list != NULL) {
+		SendMessage(list, LB_SETCURSEL, index, 0);
+	}
+}
+
+static void filter_move(const int dir)
+{
+	HWND cur;
+	int i;
+	int next;
+
+	if (dir == 0 || (filter_list == NULL && filter_pin == NULL)) {
 		return;
+	}
+	cur = filter_list;
+	i = (filter_list != NULL) ? (int)SendMessage(filter_list, LB_GETCURSEL, 0, 0) : -1;
+	if (i < 0 && filter_pin != NULL) {
+		i = (int)SendMessage(filter_pin, LB_GETCURSEL, 0, 0);
+		if (i >= 0) {
+			cur = filter_pin;
+		}
+	}
+	if (i < 0) {
+		if (dir > 0) {
+			next = filter_step(filter_list, -1, 1);
+			if (next >= 0) {
+				filter_select(filter_list, next);
+				return;
+			}
+			next = filter_step(filter_pin, -1, 1);
+			if (next >= 0) {
+				filter_select(filter_pin, next);
+			}
+		} else {
+			next = filter_step(filter_pin, (filter_pin != NULL) ?
+				(int)SendMessage(filter_pin, LB_GETCOUNT, 0, 0) : 0, -1);
+			if (next >= 0) {
+				filter_select(filter_pin, next);
+				return;
+			}
+			next = filter_step(filter_list, (filter_list != NULL) ?
+				(int)SendMessage(filter_list, LB_GETCOUNT, 0, 0) : 0, -1);
+			if (next >= 0) {
+				filter_select(filter_list, next);
+			}
+		}
+		return;
+	}
+	next = filter_step(cur, i, dir);
+	if (next >= 0) {
+		filter_select(cur, next);
+		return;
+	}
+	if (dir > 0 && cur == filter_list) {
+		next = filter_step(filter_pin, -1, 1);
+		if (next >= 0) {
+			filter_select(filter_pin, next);
+		}
+	} else if (dir < 0 && cur == filter_pin) {
+		next = filter_step(filter_list, (filter_list != NULL) ?
+			(int)SendMessage(filter_list, LB_GETCOUNT, 0, 0) : 0, -1);
+		if (next >= 0) {
+			filter_select(filter_list, next);
+		}
 	}
 }
 
@@ -284,7 +417,7 @@ static HMENU filter_submenu(MENU_ITEM_INFO *target)
 /*
  * filter_activate - 項目を実行する
  */
-static void filter_activate(MENU_ITEM_INFO *mii)
+static void filter_activate(MENU_ITEM_INFO *mii, HWND host)
 {
 	HMENU sub;
 	RECT rc;
@@ -296,16 +429,24 @@ static void filter_activate(MENU_ITEM_INFO *mii)
 	if (mii == NULL || mii == &filter_none || (mii->flag & MF_SEPARATOR)) {
 		return;
 	}
+	if (host == NULL) {
+		host = filter_list;
+	}
 	if (mii->flag & MF_POPUP) {
 		sub = filter_submenu(mii);
 		if (sub == NULL) {
 			return;
 		}
-		sel = (int)SendMessage(filter_list, LB_GETCURSEL, 0, 0);
-		GetWindowRect(filter_list, &rc);
+		sel = (host != NULL) ? (int)SendMessage(host, LB_GETCURSEL, 0, 0) : -1;
+		if (host != NULL) {
+			GetWindowRect(host, &rc);
+		} else {
+			SetRectEmpty(&rc);
+		}
 		pt.x = rc.right;
 		pt.y = rc.top;
-		if (sel >= 0 && SendMessage(filter_list, LB_GETITEMRECT, sel, (LPARAM)&item_rc) != LB_ERR) {
+		if (host != NULL && sel >= 0 &&
+			SendMessage(host, LB_GETITEMRECT, sel, (LPARAM)&item_rc) != LB_ERR) {
 			pt.y = rc.top + item_rc.top;
 		}
 		filter_in_submenu = TRUE;
@@ -334,17 +475,20 @@ static void filter_activate(MENU_ITEM_INFO *mii)
 static void filter_activate_current(void)
 {
 	MENU_ITEM_INFO *mii;
+	HWND host;
 	int sel;
 
-	if (filter_list == NULL) {
+	host = filter_list;
+	sel = (filter_list != NULL) ? (int)SendMessage(filter_list, LB_GETCURSEL, 0, 0) : -1;
+	if (sel < 0 && filter_pin != NULL) {
+		sel = (int)SendMessage(filter_pin, LB_GETCURSEL, 0, 0);
+		host = filter_pin;
+	}
+	if (sel < 0 || host == NULL) {
 		return;
 	}
-	sel = (int)SendMessage(filter_list, LB_GETCURSEL, 0, 0);
-	if (sel < 0) {
-		return;
-	}
-	mii = (MENU_ITEM_INFO *)SendMessage(filter_list, LB_GETITEMDATA, sel, 0);
-	filter_activate(mii);
+	mii = (MENU_ITEM_INFO *)SendMessage(host, LB_GETITEMDATA, sel, 0);
+	filter_activate(mii, host);
 }
 
 /*
@@ -410,7 +554,7 @@ static LRESULT CALLBACK filter_list_subclass(HWND hWnd, UINT msg, WPARAM wParam,
 			if (mii != NULL && mii != (MENU_ITEM_INFO *)LB_ERR &&
 				mii != &filter_none && !(mii->flag & MF_SEPARATOR)) {
 				if ((int)SendMessage(hWnd, LB_GETCURSEL, 0, 0) != index) {
-					SendMessage(hWnd, LB_SETCURSEL, index, 0);
+					filter_select(hWnd, index);
 				}
 			}
 		}
@@ -425,7 +569,7 @@ static LRESULT CALLBACK filter_list_subclass(HWND hWnd, UINT msg, WPARAM wParam,
 		if (HIWORD(hit) == 0) {
 			index = LOWORD(hit);
 			mii = (MENU_ITEM_INFO *)SendMessage(hWnd, LB_GETITEMDATA, index, 0);
-			filter_activate(mii);
+			filter_activate(mii, hWnd);
 		}
 		return ret;
 
@@ -437,6 +581,14 @@ static LRESULT CALLBACK filter_list_subclass(HWND hWnd, UINT msg, WPARAM wParam,
 		}
 		if (wParam == VK_RETURN) {
 			filter_activate_current();
+			return 0;
+		}
+		if (wParam == VK_DOWN) {
+			filter_move(1);
+			return 0;
+		}
+		if (wParam == VK_UP) {
+			filter_move(-1);
 			return 0;
 		}
 		break;
@@ -495,7 +647,7 @@ static LRESULT CALLBACK filter_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM l
 		return 0;
 
 	case WM_MEASUREITEM:
-		if (wParam == IDC_FILTER_LIST) {
+		if (wParam == IDC_FILTER_LIST || wParam == IDC_FILTER_PIN) {
 			ms = (MEASUREITEMSTRUCT *)lParam;
 			draw_mii = (MENU_ITEM_INFO *)ms->itemData;
 			ms->itemHeight = menu_item_extent(draw_mii, NULL);
@@ -507,7 +659,7 @@ static LRESULT CALLBACK filter_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM l
 		break;
 
 	case WM_DRAWITEM:
-		if (wParam == IDC_FILTER_LIST) {
+		if (wParam == IDC_FILTER_LIST || wParam == IDC_FILTER_PIN) {
 			ds = (DRAWITEMSTRUCT *)lParam;
 			if (ds->itemData == 0) {
 				return TRUE;
@@ -606,7 +758,11 @@ static void filter_layout_size(const POINT *mpos, int *x, int *y, int *width, in
 	MENU_ITEM_INFO *mii;
 	int i;
 	int item_w;
+	int row_h;
 	int list_h;
+	int hist_h;
+	int pin_h;
+	int pin_at;
 	int max_list;
 	int half_screen;
 	int frame_h;
@@ -618,20 +774,27 @@ static void filter_layout_size(const POINT *mpos, int *x, int *y, int *width, in
 	pad = Scale(4);
 	edit_h = Scale(26);
 	*width = Scale(280);
-	list_h = 0;
+	hist_h = 0;
+	pin_h = 0;
+	pin_at = filter_pin_index();
 	for (i = 0; i < filter_item_cnt; i++) {
 		mii = filter_items + i;
 		if (mii->item == NULL) {
 			continue;
 		}
 		item_w = 0;
-		list_h += menu_item_extent(mii, &item_w);
+		row_h = menu_item_extent(mii, &item_w);
+		if (row_h < Scale(8)) {
+			row_h = Scale(22);
+		}
 		if (item_w + Scale(24) > *width) {
 			*width = item_w + Scale(24);
 		}
-	}
-	if (list_h < Scale(22)) {
-		list_h = Scale(22);
+		if (i >= pin_at) {
+			pin_h += row_h;
+		} else {
+			hist_h += row_h;
+		}
 	}
 
 	SetRect(&work, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
@@ -655,13 +818,16 @@ static void filter_layout_size(const POINT *mpos, int *x, int *y, int *width, in
 	SetRect(&wr, 0, 0, 0, 0);
 	AdjustWindowRectEx(&wr, style, FALSE, exstyle);
 	frame_h = wr.bottom - wr.top;
-	max_list = half_screen - frame_h - edit_h - pad * 2;
-	if (max_list < Scale(80)) {
-		max_list = Scale(80);
+	max_list = half_screen - frame_h - edit_h - pad * 2 - pin_h;
+	if (max_list < 0) {
+		max_list = 0;
 	}
-	if (list_h > max_list) {
-		list_h = max_list;
+	if (hist_h > max_list) {
+		hist_h = max_list;
 	}
+	filter_hist_h = hist_h;
+	filter_pin_h = pin_h;
+	list_h = hist_h + pin_h;
 	*width += GetSystemMetricsDpi(SM_CXVSCROLL);
 	if (*width > (work.right - work.left) - Scale(16)) {
 		*width = (work.right - work.left) - Scale(16);
@@ -750,9 +916,16 @@ int menu_filter_show(const HWND hWnd, const HMENU hMenu, const POINT *mpos,
 		filter_wnd, (HMENU)IDC_FILTER_EDIT, hInst, NULL);
 	filter_list = CreateWindowEx(0, TEXT("LISTBOX"), TEXT(""),
 		WS_CHILD | WS_VISIBLE | WS_VSCROLL | LBS_OWNERDRAWVARIABLE | LBS_NOINTEGRALHEIGHT | LBS_NOTIFY,
-		0, pad + edit_h + pad, rc.right, rc.bottom - (pad + edit_h + pad),
+		0, pad + edit_h + pad, rc.right, filter_hist_h,
 		filter_wnd, (HMENU)IDC_FILTER_LIST, hInst, NULL);
-	if (filter_edit == NULL || filter_list == NULL) {
+	filter_pin = NULL;
+	if (filter_pin_h > 0) {
+		filter_pin = CreateWindowEx(0, TEXT("LISTBOX"), TEXT(""),
+			WS_CHILD | WS_VISIBLE | LBS_OWNERDRAWVARIABLE | LBS_NOINTEGRALHEIGHT | LBS_NOTIFY,
+			0, pad + edit_h + pad + filter_hist_h, rc.right, filter_pin_h,
+			filter_wnd, (HMENU)IDC_FILTER_PIN, hInst, NULL);
+	}
+	if (filter_edit == NULL || filter_list == NULL || (filter_pin_h > 0 && filter_pin == NULL)) {
 		DestroyWindow(filter_wnd);
 		filter_wnd = NULL;
 		return 0;
@@ -765,6 +938,9 @@ int menu_filter_show(const HWND hWnd, const HMENU hMenu, const POINT *mpos,
 	filter_list_proc = (WNDPROC)GetWindowLongPtr(filter_list, GWLP_WNDPROC);
 	SetWindowLongPtr(filter_edit, GWLP_WNDPROC, (LONG_PTR)filter_edit_subclass);
 	SetWindowLongPtr(filter_list, GWLP_WNDPROC, (LONG_PTR)filter_list_subclass);
+	if (filter_pin != NULL) {
+		SetWindowLongPtr(filter_pin, GWLP_WNDPROC, (LONG_PTR)filter_list_subclass);
+	}
 	dark_mode_set_window(filter_wnd);
 	dark_mode_set_children(filter_wnd);
 	filter_fill(TEXT(""));
@@ -801,6 +977,7 @@ int menu_filter_show(const HWND hWnd, const HMENU hMenu, const POINT *mpos,
 	}
 	filter_edit = NULL;
 	filter_list = NULL;
+	filter_pin = NULL;
 	if (filter_font != NULL) {
 		DeleteObject(filter_font);
 		filter_font = NULL;
