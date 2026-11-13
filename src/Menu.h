@@ -95,6 +95,8 @@ HFONT menu_font_create(void);
 int menu_filter_show(const HWND hWnd, const HMENU hMenu, const POINT *mpos,
 	MENU_ITEM_INFO *items, const int count);
 void menu_key_hook_pause(void);
+BOOL menu_filter_is_open(void);
+void menu_filter_dismiss(void);
 MENU_ITEM_INFO *menu_get_info(const UINT id);
 BOOL menu_check_item_info(const MENU_ITEM_INFO *mii);
 TCHAR *menu_get_keyname(const UINT modifiers, const UINT virtkey);

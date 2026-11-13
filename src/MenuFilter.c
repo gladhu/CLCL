@@ -34,6 +34,7 @@
 #define IDC_FILTER_EDIT			1001
 #define IDC_FILTER_LIST			1002
 #define FILTER_TIMER			1
+#define FILTER_WATCH			2
 
 #ifndef EM_SETCUEBANNER
 #define EM_SETCUEBANNER			0x1501
@@ -474,6 +475,15 @@ static LRESULT CALLBACK filter_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM l
 		return 0;
 
 	case WM_TIMER:
+		if (wParam == FILTER_WATCH) {
+			other = GetForegroundWindow();
+			if (filter_allow_close == TRUE && filter_in_submenu == FALSE &&
+				other != NULL && other != hWnd && filter_related(other) == FALSE) {
+				filter_result = 0;
+				filter_done = TRUE;
+			}
+			return 0;
+		}
 		if (wParam == FILTER_TIMER) {
 			KillTimer(hWnd, FILTER_TIMER);
 			needle[0] = TEXT('\0');
@@ -527,9 +537,25 @@ static LRESULT CALLBACK filter_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM l
 		if (filter_allow_close == TRUE && filter_in_submenu == FALSE &&
 			LOWORD(wParam) == WA_INACTIVE) {
 			other = (HWND)lParam;
-			if (GetForegroundWindow() != hWnd &&
-				filter_related(other) == FALSE &&
+			/* 输入法或子菜单不算离开 */
+			if (filter_related(other) == TRUE) {
+				break;
+			}
+			/* 失活时 GetForegroundWindow 可能仍是自己，稍后再看一次 */
+			if (other != NULL && GetForegroundWindow() != hWnd &&
 				filter_related(GetForegroundWindow()) == FALSE) {
+				filter_result = 0;
+				filter_done = TRUE;
+			} else {
+				SetTimer(hWnd, FILTER_WATCH, 50, NULL);
+			}
+		}
+		break;
+
+	case WM_ACTIVATEAPP:
+		if (wParam == FALSE && filter_allow_close == TRUE && filter_in_submenu == FALSE) {
+			other = GetForegroundWindow();
+			if (filter_related(other) == FALSE) {
 				filter_result = 0;
 				filter_done = TRUE;
 			}
@@ -725,6 +751,7 @@ int menu_filter_show(const HWND hWnd, const HMENU hMenu, const POINT *mpos,
 	SetForegroundWindow(filter_wnd);
 	SetFocus(filter_edit);
 	filter_allow_close = TRUE;
+	SetTimer(filter_wnd, FILTER_WATCH, 200, NULL);
 
 	got_msg = 1;
 	while (filter_done == FALSE) {
@@ -745,6 +772,7 @@ int menu_filter_show(const HWND hWnd, const HMENU hMenu, const POINT *mpos,
 	filter_allow_close = FALSE;
 	if (filter_wnd != NULL) {
 		KillTimer(filter_wnd, FILTER_TIMER);
+		KillTimer(filter_wnd, FILTER_WATCH);
 		DestroyWindow(filter_wnd);
 		filter_wnd = NULL;
 	}
@@ -758,5 +786,22 @@ int menu_filter_show(const HWND hWnd, const HMENU hMenu, const POINT *mpos,
 		SetForegroundWindow(previous);
 	}
 	return filter_result;
+}
+
+/*
+ * menu_filter_is_open - 履歴一覧のメッセージループがまだ終わっていない
+ */
+BOOL menu_filter_is_open(void)
+{
+	return (filter_wnd != NULL && filter_done == FALSE) ? TRUE : FALSE;
+}
+
+/*
+ * menu_filter_dismiss - 表示中の履歴一覧を閉じる
+ */
+void menu_filter_dismiss(void)
+{
+	filter_result = 0;
+	filter_done = TRUE;
 }
 /* End of source */

@@ -105,6 +105,7 @@ static BOOL clip_listening;
 // 自分で設定したため履歴に入れないクリップボードのシーケンス番号
 static DWORD ignore_clip_seq;
 static HMENU popup_menu;
+static BOOL popup_reopen;
 static HMODULE themes_lib;
 // 修飾キーの二度押しを検出するキーボードフック
 static HANDLE key_hook_thread;
@@ -741,8 +742,11 @@ static BOOL show_popup_menu(const HWND hWnd, const ACTION_INFO *ai, const BOOL c
 	BOOL shift_key, ctrl_key;
 
 	if (popup_menu != NULL) {
-		// ポップアップメニュー表示中
-		if (menu_attach_tid == 0) {
+		// 点到别的窗口后，列表可能已被盖住，但消息循环还没退出
+		if (menu_filter_is_open() == TRUE) {
+			menu_filter_dismiss();
+			popup_reopen = TRUE;
+		} else if (menu_attach_tid == 0) {
 			_SetForegroundWindow(hWnd);
 		}
 		return FALSE;
@@ -900,6 +904,10 @@ static BOOL show_popup_menu(const HWND hWnd, const ACTION_INFO *ai, const BOOL c
 	}
 	// メニュー情報の解放
 	menu_free();
+	if (popup_reopen == TRUE) {
+		popup_reopen = FALSE;
+		return show_popup_menu(hWnd, ai, caret, attach);
+	}
 	return TRUE;
 }
 
