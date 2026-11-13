@@ -601,12 +601,15 @@ static void filter_layout_size(const POINT *mpos, int *x, int *y, int *width, in
 	MONITORINFO mi;
 	HMONITOR mon;
 	RECT work;
+	RECT screen;
 	RECT wr;
 	MENU_ITEM_INFO *mii;
 	int i;
 	int item_w;
 	int list_h;
 	int max_list;
+	int half_screen;
+	int frame_h;
 	int edit_h;
 	int pad;
 	DWORD style;
@@ -632,17 +635,26 @@ static void filter_layout_size(const POINT *mpos, int *x, int *y, int *width, in
 	}
 
 	SetRect(&work, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
+	screen = work;
 	if (mpos != NULL) {
 		mon = MonitorFromPoint(*mpos, MONITOR_DEFAULTTONEAREST);
 		ZeroMemory(&mi, sizeof(mi));
 		mi.cbSize = sizeof(mi);
 		if (GetMonitorInfo(mon, &mi) != 0) {
 			work = mi.rcWork;
+			screen = mi.rcMonitor;
 		}
 	}
-	max_list = (work.bottom - work.top) - edit_h - pad * 3 - Scale(16);
-	if (max_list < Scale(120)) {
-		max_list = Scale(120);
+	/* 整个历史窗口最多占所在屏幕高度的一半，多出的条目由列表滚动条查看 */
+	half_screen = (screen.bottom - screen.top) / 2;
+	style = WS_POPUP | WS_BORDER | WS_CLIPCHILDREN;
+	exstyle = WS_EX_TOOLWINDOW;
+	SetRect(&wr, 0, 0, 0, 0);
+	AdjustWindowRectEx(&wr, style, FALSE, exstyle);
+	frame_h = wr.bottom - wr.top;
+	max_list = half_screen - frame_h - edit_h - pad * 2;
+	if (max_list < Scale(80)) {
+		max_list = Scale(80);
 	}
 	if (list_h > max_list) {
 		list_h = max_list;
@@ -651,9 +663,6 @@ static void filter_layout_size(const POINT *mpos, int *x, int *y, int *width, in
 	if (*width > (work.right - work.left) - Scale(16)) {
 		*width = (work.right - work.left) - Scale(16);
 	}
-
-	style = WS_POPUP | WS_BORDER | WS_CLIPCHILDREN;
-	exstyle = WS_EX_TOOLWINDOW;
 	SetRect(&wr, 0, 0, *width, pad + edit_h + pad + list_h);
 	AdjustWindowRectEx(&wr, style, FALSE, exstyle);
 	*width = wr.right - wr.left;
