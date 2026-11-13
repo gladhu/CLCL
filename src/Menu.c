@@ -339,6 +339,9 @@ int menu_show(const HWND hWnd, const HMENU hMenu, const POINT *mpos)
 
 	menu_get_show_point(mpos, &apos);
 	if (menu_filter_enable == TRUE) {
+		/* 历史列表跟鼠标，不跟文本光标 */
+		GetCursorPos(&apos);
+		SetDpiFromPoint(apos);
 		return menu_filter_show(hWnd, hMenu, &apos, menu_item_info, menu_item_cnt);
 	}
 	ret = TrackPopupMenu(hMenu,

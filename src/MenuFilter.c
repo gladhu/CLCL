@@ -645,8 +645,11 @@ static void filter_layout_size(const POINT *mpos, int *x, int *y, int *width, in
 			screen = mi.rcMonitor;
 		}
 	}
-	/* 整个历史窗口最多占所在屏幕高度的一半，多出的条目由列表滚动条查看 */
+	/* 整个历史窗口最多占所在屏幕高度的一半，并且不能高出工作区 */
 	half_screen = (screen.bottom - screen.top) / 2;
+	if (half_screen > work.bottom - work.top) {
+		half_screen = work.bottom - work.top;
+	}
 	style = WS_POPUP | WS_BORDER | WS_CLIPCHILDREN;
 	exstyle = WS_EX_TOOLWINDOW;
 	SetRect(&wr, 0, 0, 0, 0);
@@ -668,18 +671,29 @@ static void filter_layout_size(const POINT *mpos, int *x, int *y, int *width, in
 	*width = wr.right - wr.left;
 	*height = wr.bottom - wr.top;
 	*x = (mpos != NULL) ? mpos->x : work.left;
-	*y = (mpos != NULL) ? mpos->y : work.top;
 	if (*x + *width > work.right) {
 		*x = work.right - *width;
-	}
-	if (*y + *height > work.bottom) {
-		*y = work.bottom - *height;
 	}
 	if (*x < work.left) {
 		*x = work.left;
 	}
+	/* 优先在鼠标下方展开；下方不够就改到鼠标上方，避免整窗贴死在屏幕底边 */
+	if (mpos == NULL) {
+		*y = work.top;
+	} else if (work.bottom - mpos->y >= *height) {
+		*y = mpos->y;
+	} else if (mpos->y - work.top >= *height) {
+		*y = mpos->y - *height;
+	} else if (work.bottom - mpos->y >= mpos->y - work.top) {
+		*y = work.bottom - *height;
+	} else {
+		*y = work.top;
+	}
 	if (*y < work.top) {
 		*y = work.top;
+	}
+	if (*y + *height > work.bottom) {
+		*y = work.bottom - *height;
 	}
 }
 
